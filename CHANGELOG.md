@@ -17,7 +17,8 @@ Fork of ZalithLauncher2, upstream 2.6.1 (commit d93722e).
   both bundled (OFL). Icon family swapped wholesale to Phosphor bold (MIT).
 - Offline accounts are now the first entry in the login menu.
 - Memory allocation defaults now scale with the device (about 55% of total RAM,
-  floor 1536 MB within device limits) instead of falling back to 256 MB.
+  floor 1536 MB within device limits) instead of the upstream tier table that
+  capped every 6 GB+ device at 2048 MB.
 - The game JVM gets a tuned G1 baseline when the user has not configured a
   garbage collector (`-XX:+UseG1GC`, `G1NewSizePercent=20`,
   `G1ReservePercent=20`, `MaxGCPauseMillis=40`, `G1HeapRegionSize=16M`,
