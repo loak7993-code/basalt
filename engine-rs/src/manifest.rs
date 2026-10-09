@@ -1,11 +1,11 @@
 //! The slice of Mojang's version manifest the engine needs to plan a launch.
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// Top-level version manifest. Unknown fields are ignored so new manifest
 /// versions keep parsing.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionManifest {
     pub id: String,
@@ -33,23 +33,25 @@ pub struct VersionManifest {
     pub release_time: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AssetIndex {
     pub id: String,
     pub url: String,
     #[serde(default)]
     pub total_size: u64,
+    #[serde(default)]
+    pub sha1: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JavaRequirement {
     pub component: String,
     pub major_version: i64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadEntry {
     pub url: String,
@@ -59,7 +61,7 @@ pub struct DownloadEntry {
     pub size: u64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LoggingConfig {
     pub argument: String,
@@ -67,7 +69,7 @@ pub struct LoggingConfig {
     pub file: Option<DownloadEntry>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ManifestArguments {
     #[serde(default)]
@@ -79,7 +81,7 @@ pub struct ManifestArguments {
     pub default_user_jvm: Vec<serde_json::Value>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryEntry {
     #[serde(default)]
@@ -94,7 +96,7 @@ pub struct LibraryEntry {
     pub natives: Option<HashMap<String, String>>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryDownloads {
     #[serde(default)]
@@ -103,7 +105,7 @@ pub struct LibraryDownloads {
     pub classifiers: HashMap<String, DownloadArtifact>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadArtifact {
     #[serde(default)]
@@ -116,7 +118,7 @@ pub struct DownloadArtifact {
     pub size: u64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LibraryRule {
     pub action: String,
@@ -126,7 +128,7 @@ pub struct LibraryRule {
     pub features: Option<HashMap<String, bool>>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RuleOs {
     #[serde(default)]

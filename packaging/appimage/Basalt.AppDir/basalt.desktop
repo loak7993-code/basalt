@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Basalt
+GenericName=Minecraft Java Edition Launcher
+Comment=Install and play Minecraft Java Edition; offline accounts first
+Exec=basalt
+Icon=basalt
+Categories=Game;
+Terminal=true

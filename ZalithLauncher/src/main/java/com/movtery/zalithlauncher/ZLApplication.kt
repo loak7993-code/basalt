@@ -85,6 +85,11 @@ class ZLApplication : Application(), SingletonImageLoader.Factory {
 
         super.onCreate()
         runCatching {
+            // 64 个并发下载 worker 共享 java.net 的 keep-alive 池；JVM 默认
+            // 每个主机只缓存 5 条连接，会让大部分文件重开 TLS 握手。放大到
+            // 与下载并发一致，让 worker 复用连接。
+            System.setProperty("http.maxConnections", "128")
+
             Fishnet.init(this, PathManager.DIR_NATIVE_LOGS.absolutePath)
 
             MMKV.initialize(this)

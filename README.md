@@ -107,6 +107,10 @@ Basalt/
                          manifest parsing, library rules, classpath, memory/GC
                          policy, arg assembly, exec strategy, JNI surface;
                          cargo test runs against the real 26.3 manifest
+  cli/                   the Linux launcher (basalt CLI): install, list, play,
+                         offline accounts; packaged as an AppImage
+  packaging/appimage/    AppDir + build recipe for the AppImage
+  website/               the product site (Vite + React + Tailwind v4)
   engine/                the Kotlin reference engine (same scope, same tests)
   ZalithLauncher/        the app: Compose UI, settings, accounts, downloads, launch pipeline
     src/main/java/com/movtery/zalithlauncher/
