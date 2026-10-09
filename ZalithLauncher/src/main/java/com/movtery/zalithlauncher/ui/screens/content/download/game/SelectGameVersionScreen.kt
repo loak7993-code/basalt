@@ -89,6 +89,7 @@ import com.movtery.zalithlauncher.ui.screens.NestedNavKey
 import com.movtery.zalithlauncher.ui.screens.NormalNavKey
 import com.movtery.zalithlauncher.ui.screens.TitledNavKey
 import com.movtery.zalithlauncher.ui.screens.content.elements.backgroundGlass
+import com.movtery.zalithlauncher.ui.theme.GeistMono
 import com.movtery.zalithlauncher.ui.theme.cardColor
 import com.movtery.zalithlauncher.ui.theme.onCardColor
 import com.movtery.zalithlauncher.utils.animation.getAnimateTween
@@ -544,7 +545,7 @@ private fun VersionItemLayout(
                 ) {
                     Text(
                         text = version.version.id,
-                        style = MaterialTheme.typography.labelLarge
+                        style = MaterialTheme.typography.labelLarge.copy(fontFamily = GeistMono)
                     )
 
                     LittleTextLabel(
@@ -566,7 +567,7 @@ private fun VersionItemLayout(
                         input = version.version.releaseTime,
                         pattern = stringResource(R.string.date_format)
                     ),
-                    style = MaterialTheme.typography.labelMedium
+                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = GeistMono)
                 )
             }
 

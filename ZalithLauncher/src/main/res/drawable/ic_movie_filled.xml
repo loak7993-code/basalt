@@ -1,9 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phosphor Icons bold (phosphoricons.com), MIT license. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="960"
-    android:viewportHeight="960">
-  <path
-      android:pathData="m160,160 l80,160h120l-80,-160h80l80,160h120l-80,-160h80l80,160h120l-80,-160h120q33,0 56.5,23.5T880,240v480q0,33 -23.5,56.5T800,800L160,800q-33,0 -56.5,-23.5T80,720v-480q0,-33 23.5,-56.5T160,160Z"
-      android:fillColor="#1f1f1f"/>
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+  <path android:fillColor="#FF1F1F1F" android:pathData="M216,36H40A20,20,0,0,0,20,56V200a20,20,0,0,0,20,20H216a20,20,0,0,0,20-20V56A20,20,0,0,0,216,36ZM44,100h72v56H44Zm96-24V60h24V76Zm-24,0H92V60h24Zm0,104v16H92V180Zm24,0h24v16H140Zm0-24V100h72v56Zm72-80H188V60h24ZM68,60V76H44V60ZM44,180H68v16H44Zm144,16V180h24v16Z" />
 </vector>

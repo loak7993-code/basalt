@@ -1,9 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phosphor Icons bold (phosphoricons.com), MIT license. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
-    android:viewportWidth="960"
-    android:viewportHeight="960">
-  <path
-      android:pathData="M197,761q-56,-57 -86.5,-130T80,478q0,-80 30,-153t87,-130l57,57q-46,45 -70,103.5T160,478q0,64 24.5,122.5T254,704l-57,57ZM337.5,702.5Q320,685 320,660t17.5,-42.5Q355,600 380,600t42.5,17.5Q440,635 440,660t-17.5,42.5Q405,720 380,720t-42.5,-17.5ZM519,520v-71l-61,36 -40,-70 61,-35 -61,-35 40,-70 61,36v-71h80v71l61,-36 40,70 -61,35 61,35 -40,70 -61,-36v71h-80ZM763,761 L706,704q46,-45 70,-103.5T800,478q0,-64 -24.5,-122.5T706,252l57,-57q56,57 86.5,130T880,478q0,80 -30,153t-87,130Z"
-      android:fillColor="#1f1f1f"/>
+    android:viewportWidth="256"
+    android:viewportHeight="256">
+  <path android:fillColor="#FF1F1F1F" android:pathData="M218.29,182.17a12,12,0,0,1-16.47,4.12L140,149.19V216a12,12,0,0,1-24,0V149.19l-61.82,37.1a12,12,0,1,1-12.35-20.58L104.68,128,41.83,90.29A12,12,0,1,1,54.18,69.71L116,106.81V40a12,12,0,0,1,24,0v66.81l61.82-37.1a12,12,0,1,1,12.35,20.58L151.32,128l62.85,37.71A12,12,0,0,1,218.29,182.17Z" />
 </vector>

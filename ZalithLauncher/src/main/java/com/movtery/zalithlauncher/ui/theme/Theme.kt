@@ -45,6 +45,82 @@ import com.movtery.zalithlauncher.utils.festival.LocalFestivals
 import com.movtery.zalithlauncher.viewmodel.BackgroundViewModel
 import com.movtery.zalithlauncher.viewmodel.LocalBackgroundViewModel
 
+private val basaltLight = lightColorScheme(
+    primary = primaryLight.basalt,
+    onPrimary = onPrimaryLight.basalt,
+    primaryContainer = primaryContainerLight.basalt,
+    onPrimaryContainer = onPrimaryContainerLight.basalt,
+    secondary = secondaryLight.basalt,
+    onSecondary = onSecondaryLight.basalt,
+    secondaryContainer = secondaryContainerLight.basalt,
+    onSecondaryContainer = onSecondaryContainerLight.basalt,
+    tertiary = tertiaryLight.basalt,
+    onTertiary = onTertiaryLight.basalt,
+    tertiaryContainer = tertiaryContainerLight.basalt,
+    onTertiaryContainer = onTertiaryContainerLight.basalt,
+    error = errorLight.basalt,
+    onError = onErrorLight.basalt,
+    errorContainer = errorContainerLight.basalt,
+    onErrorContainer = onErrorContainerLight.basalt,
+    background = backgroundLight.basalt,
+    onBackground = onBackgroundLight.basalt,
+    surface = surfaceLight.basalt,
+    onSurface = onSurfaceLight.basalt,
+    surfaceVariant = surfaceVariantLight.basalt,
+    onSurfaceVariant = onSurfaceVariantLight.basalt,
+    outline = outlineLight.basalt,
+    outlineVariant = outlineVariantLight.basalt,
+    scrim = scrimLight.basalt,
+    inverseSurface = inverseSurfaceLight.basalt,
+    inverseOnSurface = inverseOnSurfaceLight.basalt,
+    inversePrimary = inversePrimaryLight.basalt,
+    surfaceDim = surfaceDimLight.basalt,
+    surfaceBright = surfaceBrightLight.basalt,
+    surfaceContainerLowest = surfaceContainerLowestLight.basalt,
+    surfaceContainerLow = surfaceContainerLowLight.basalt,
+    surfaceContainer = surfaceContainerLight.basalt,
+    surfaceContainerHigh = surfaceContainerHighLight.basalt,
+    surfaceContainerHighest = surfaceContainerHighestLight.basalt,
+)
+
+private val basaltDark = darkColorScheme(
+    primary = primaryDark.basalt,
+    onPrimary = onPrimaryDark.basalt,
+    primaryContainer = primaryContainerDark.basalt,
+    onPrimaryContainer = onPrimaryContainerDark.basalt,
+    secondary = secondaryDark.basalt,
+    onSecondary = onSecondaryDark.basalt,
+    secondaryContainer = secondaryContainerDark.basalt,
+    onSecondaryContainer = onSecondaryContainerDark.basalt,
+    tertiary = tertiaryDark.basalt,
+    onTertiary = onTertiaryDark.basalt,
+    tertiaryContainer = tertiaryContainerDark.basalt,
+    onTertiaryContainer = onTertiaryContainerDark.basalt,
+    error = errorDark.basalt,
+    onError = onErrorDark.basalt,
+    errorContainer = errorContainerDark.basalt,
+    onErrorContainer = onErrorContainerDark.basalt,
+    background = backgroundDark.basalt,
+    onBackground = onBackgroundDark.basalt,
+    surface = surfaceDark.basalt,
+    onSurface = onSurfaceDark.basalt,
+    surfaceVariant = surfaceVariantDark.basalt,
+    onSurfaceVariant = onSurfaceVariantDark.basalt,
+    outline = outlineDark.basalt,
+    outlineVariant = outlineVariantDark.basalt,
+    scrim = scrimDark.basalt,
+    inverseSurface = inverseSurfaceDark.basalt,
+    inverseOnSurface = inverseOnSurfaceDark.basalt,
+    inversePrimary = inversePrimaryDark.basalt,
+    surfaceDim = surfaceDimDark.basalt,
+    surfaceBright = surfaceBrightDark.basalt,
+    surfaceContainerLowest = surfaceContainerLowestDark.basalt,
+    surfaceContainerLow = surfaceContainerLowDark.basalt,
+    surfaceContainer = surfaceContainerDark.basalt,
+    surfaceContainerHigh = surfaceContainerHighDark.basalt,
+    surfaceContainerHighest = surfaceContainerHighestDark.basalt,
+)
+
 private val embermireLight = lightColorScheme(
     primary = primaryLight.embermire,
     onPrimary = onPrimaryLight.embermire,
@@ -622,6 +698,7 @@ fun ZalithLauncherTheme(
             }
 
             darkTheme -> when (colorTheme) {
+                ColorThemeType.BASALT -> basaltDark
                 ColorThemeType.EMBERMIRE -> embermireDark
                 ColorThemeType.VELVET_ROSE -> velvetRoseDark
                 ColorThemeType.MISTWAVE -> mistwaveDark
@@ -637,6 +714,7 @@ fun ZalithLauncherTheme(
             }
 
             else -> when (colorTheme) {
+                ColorThemeType.BASALT -> basaltLight
                 ColorThemeType.EMBERMIRE -> embermireLight
                 ColorThemeType.VELVET_ROSE -> velvetRoseLight
                 ColorThemeType.MISTWAVE -> mistwaveLight

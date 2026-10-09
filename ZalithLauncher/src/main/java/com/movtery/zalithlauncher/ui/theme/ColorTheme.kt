@@ -21,6 +21,7 @@ package com.movtery.zalithlauncher.ui.theme
 import androidx.compose.ui.graphics.Color
 
 data class ColorTheme(
+    val basalt: Color,
     val embermire: Color,
     val velvetRose: Color,
     val mistwave: Color,
@@ -32,6 +33,7 @@ data class ColorTheme(
 
 enum class ColorThemeType {
     DYNAMIC,
+    BASALT,
     EMBERMIRE,
     VELVET_ROSE,
     MISTWAVE,

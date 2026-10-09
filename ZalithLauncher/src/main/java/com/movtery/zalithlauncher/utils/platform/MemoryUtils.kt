@@ -25,6 +25,7 @@ import com.movtery.zalithlauncher.utils.device.Architecture
 import java.math.BigDecimal
 import java.math.RoundingMode
 import kotlin.math.floor
+import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.round
 
@@ -73,6 +74,19 @@ fun getMaxMemoryForSettings(context: Context): Int {
         (deviceRam - (if (deviceRam < 3064) 800 else 1024)).toInt()
     }
     return maxRam
+}
+
+/**
+ * 未手动设置内存时的默认堆大小：设备内存的约 55%，至少 1536MB（在设备
+ * 允许的范围内），并以 [getMaxMemoryForSettings] 为上限。
+ * 256MB 的硬下限会让现代版本一进世界就内存溢出，这里给的是一个能玩的值。
+ */
+@WorkerThread
+fun getDefaultRamAllocation(context: Context): Int {
+    val max = getMaxMemoryForSettings(context)
+    val target = (getTotalMemory(context).bytesToMB() * 0.55).toInt()
+    val floor = min(1536, max)
+    return max(target, floor).coerceAtMost(max)
 }
 
 /**

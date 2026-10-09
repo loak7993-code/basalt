@@ -20,6 +20,7 @@ package com.movtery.zalithlauncher.ui.screens.content.home.version
 
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.gestures.awaitEachGesture
+import com.movtery.zalithlauncher.ui.theme.GeistMono
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -297,7 +298,7 @@ private fun InfoRow(version: Version) {
     ) {
         Text(
             text = versionInfo?.minecraftVersion ?: "",
-            style = MaterialTheme.typography.labelSmall
+            style = MaterialTheme.typography.labelSmall.copy(fontFamily = GeistMono)
         )
         versionInfo?.loaderInfos?.forEach { loaderInfo ->
             Text(
