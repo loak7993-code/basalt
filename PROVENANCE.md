@@ -16,6 +16,35 @@ upstream version 2.6.1 (commit d93722e, October 2026).
   account flow defaults, memory defaults, GC baseline) are new work in this
   repository, also GPL-3.0.
 
+### The engine boundary (Basalt 1.2.0)
+
+Basalt's own launch engine lives in `engine/` and is licensed GPL-3.0 as part
+of this fork. It owns, as first-party code with unit tests against the real
+Mojang 26.3 manifest:
+
+- version manifest parsing (arguments, libraries, rules, logging config,
+  `default-user-jvm`)
+- library rule evaluation per platform (os, arch, features)
+- classpath construction and natives selection
+- memory policy and GC policy (the tuned phone-class G1 baseline)
+- full JVM and game argument assembly with placeholder substitution
+- the launch plan shape and an exec strategy interface (reference
+  child-process implementation)
+
+What the engine deliberately does NOT reimplement, because those are compiled
+artifacts from years of cross-compilation work rather than code that can be
+re-derived from observation in a fork session:
+
+- the bionic-built Java runtimes (upstream PojavLauncher-team OpenJDK builds)
+- the in-process JVM exec native bridge and linker hooks (libpojavexec and
+  friends)
+- the patched LWJGL builds that bridge Android EGL/input into LWJGL
+
+The app binds its launch behavior to the engine through
+`gcPolicyFromArgs`/`applyTo` (the same helpers the engine's tests enforce), so
+the tested logic is the single source of truth for GC and memory policy. The
+remaining upstream primitives stay credited artifacts under GPL-3.0/LGPL-3.0.
+
 ## Third-party assets added by this fork
 
 - Geist and Geist Mono typefaces (Vercel), OFL 1.1, bundled in

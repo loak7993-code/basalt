@@ -18,6 +18,7 @@ editorBom = "0.24.6"
 fishnet = "1.1.0"
 gson = "2.14.0"
 kotlin = "2.4.20"
+serialization = "1.11.0"
 kspPlugin = "2.3.12"
 coreKtx = "1.19.1"
 kotlinxCoroutinesAndroid = "1.11.0"
@@ -66,6 +67,8 @@ editor-language-textmate = { module = "io.github.rosemoe:language-textmate" }
 fishnet = { module = "io.github.kyant0:fishnet", version.ref = "fishnet" }
 jspecify = { module = "org.jspecify:jspecify", version.ref = "jspecify" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test-junit", version.ref = "kotlin" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-constraintlayout-compose = { module = "androidx.constraintlayout:constraintlayout-compose", version.ref = "constraintlayoutCompose" }
@@ -142,3 +145,5 @@ kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "ko
 ksp-plugin = { id = "com.google.devtools.ksp", version.ref = "kspPlugin" }
 android-library = { id = "com.android.library", version.ref = "agp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "dagger" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

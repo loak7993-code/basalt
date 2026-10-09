@@ -86,6 +86,7 @@ launcher injects a tuned G1 baseline (`G1NewSizePercent=20`,
 ## Build, test, deploy
 
 ```bash
+./gradlew :engine:test                             # engine unit tests (real 26.3 manifest)
 ./gradlew :ZalithLauncher:assembleDebug            # universal debug APK
 ./gradlew :ZalithLauncher:assembleDebug -Darch=x86_64   # single-ABI debug APK
 ./gradlew :ZalithLauncher:assembleRelease          # release APK, signed with basalt.jks
@@ -99,6 +100,9 @@ platform 37, build-tools 37, NDK 25.2.9519653, and accepted licenses.
 
 ```
 Basalt/
+  engine/                Basalt's own launch engine: manifest parsing, library
+                         rules, classpath, memory/GC policy, arg assembly,
+                         exec strategy; unit-tested against the real 26.3 manifest
   ZalithLauncher/        the app: Compose UI, settings, accounts, downloads, launch pipeline
     src/main/java/com/movtery/zalithlauncher/
       game/launch/       JVM launch pipeline, arg assembly, GC baseline

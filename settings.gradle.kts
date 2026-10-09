@@ -25,6 +25,8 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "Basalt"
+include(":engine")
+project(":engine").projectDir = file("engine")
 include(":ZalithLauncher")
 include(":LWJGL")
 include(":LWJGL:patches")

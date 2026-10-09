@@ -32,6 +32,8 @@ import com.movtery.zalithlauncher.bridge.ZLNativeInvoker
 import com.movtery.zalithlauncher.components.Components
 import com.movtery.zalithlauncher.components.UnpackComponentsTask
 import com.movtery.zalithlauncher.context.GlobalContext
+import dev.leonxlnx.basalt.engine.model.applyTo
+import dev.leonxlnx.basalt.engine.model.gcPolicyFromArgs
 import com.movtery.zalithlauncher.game.multirt.Runtime
 import com.movtery.zalithlauncher.game.multirt.RuntimesManager
 import com.movtery.zalithlauncher.game.path.getGameHome
@@ -367,24 +369,10 @@ abstract class Launcher(
         // Some phones are not using the right number of cores, fix that
         args.add("-XX:ActiveProcessorCount=${java.lang.Runtime.getRuntime().availableProcessors()}")
 
-        // Tuned G1 baseline for phone-class devices: keeps frame-time spikes
-        // down under constrained heaps. Skipped entirely when the user (or a
-        // modpack) already picked their own garbage collector.
-        if (args.none { it.startsWith("-XX:+Use") && it.endsWith("GC") }) {
-            args.purgeArg("-XX:+UnlockExperimentalVMOptions")
-            args.purgeArg("-XX:G1NewSizePercent")
-            args.purgeArg("-XX:G1ReservePercent")
-            args.purgeArg("-XX:MaxGCPauseMillis")
-            args.purgeArg("-XX:G1HeapRegionSize")
-            args.purgeArg("-XX:+DisableExplicitGC")
-            args.add("-XX:+UnlockExperimentalVMOptions")
-            args.add("-XX:+UseG1GC")
-            args.add("-XX:G1NewSizePercent=20")
-            args.add("-XX:G1ReservePercent=20")
-            args.add("-XX:MaxGCPauseMillis=40")
-            args.add("-XX:G1HeapRegionSize=16M")
-            args.add("-XX:+DisableExplicitGC")
-        }
+        // Engine-owned GC policy: the same applier the engine module tests
+        // enforce, applied to the final merged args. Skipped entirely when the
+        // user (or a modpack) already picked their own garbage collector.
+        gcPolicyFromArgs(args).applyTo(args)
     }
 
     protected fun MutableList<String>.purgeArg(argStart: String) {

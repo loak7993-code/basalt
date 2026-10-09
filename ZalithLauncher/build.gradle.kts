@@ -263,6 +263,7 @@ dependencies {
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     //Project
     implementation(project(":LayerController"))
+    implementation(project(":engine"))
     implementation(project(":ColorPicker"))
     implementation(project(":CardGrid"))
     implementation(project(":Terracotta"))

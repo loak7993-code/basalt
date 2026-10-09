@@ -3,6 +3,24 @@
 All notable changes to this fork are recorded here. Upstream history lives in
 the git lineage of the fork point.
 
+## 1.2.0 - 2026-10-09
+
+- New `:engine` module, Basalt's own launch engine: version manifest parsing
+  (real 26.3 shape), Mojang library rule evaluation (os/arch/features),
+  classpath construction, memory and GC policies, full JVM and game argument
+  assembly with placeholder substitution, quick play handling, and an exec
+  strategy interface with a reference child-process implementation.
+- 23 unit tests run against the real Mojang 26.3 manifest as the fixture:
+  platform filtering, natives selection, policy overrides, placeholder
+  resolution, command formation, real exit codes.
+- The app's launcher now applies its GC policy through the engine's
+  `gcPolicyFromArgs` + `applyTo`, so the tested engine logic is the single
+  source of truth for launch behavior instead of an inline copy.
+- 26.3 detail: the manifest now ships its own JVM defaults
+  (`default-user-jvm`: heap, ZGC on desktop, CompactObjectHeaders,
+  AlwaysPreTouch). The engine evaluates them, then the caller's policy
+  replaces heap and collector selection; object-layout flags survive.
+
 ## 1.1.0 - 2026-10-09
 
 - Empty home now carries its own action: when no versions are installed, the
