@@ -32,6 +32,7 @@ import com.movtery.zalithlauncher.bridge.ZLNativeInvoker
 import com.movtery.zalithlauncher.components.Components
 import com.movtery.zalithlauncher.components.UnpackComponentsTask
 import com.movtery.zalithlauncher.context.GlobalContext
+import com.movtery.zalithlauncher.engine.RustEngine
 import dev.leonxlnx.basalt.engine.model.applyTo
 import dev.leonxlnx.basalt.engine.model.gcPolicyFromArgs
 import com.movtery.zalithlauncher.game.multirt.Runtime
@@ -369,10 +370,9 @@ abstract class Launcher(
         // Some phones are not using the right number of cores, fix that
         args.add("-XX:ActiveProcessorCount=${java.lang.Runtime.getRuntime().availableProcessors()}")
 
-        // Engine-owned GC policy: the same applier the engine module tests
-        // enforce, applied to the final merged args. Skipped entirely when the
-        // user (or a modpack) already picked their own garbage collector.
-        gcPolicyFromArgs(args).applyTo(args)
+        // Engine-owned GC policy: the Rust engine (engine-rs) is the runtime
+        // source of truth, with the tested Kotlin engine as fallback.
+        RustEngine.applyGcPolicy(args)
     }
 
     protected fun MutableList<String>.purgeArg(argStart: String) {

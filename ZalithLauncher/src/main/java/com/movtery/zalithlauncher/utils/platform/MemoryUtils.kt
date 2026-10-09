@@ -21,6 +21,7 @@ package com.movtery.zalithlauncher.utils.platform
 import android.app.ActivityManager
 import android.content.Context
 import androidx.annotation.WorkerThread
+import com.movtery.zalithlauncher.engine.RustEngine
 import com.movtery.zalithlauncher.utils.device.Architecture
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -77,17 +78,16 @@ fun getMaxMemoryForSettings(context: Context): Int {
 }
 
 /**
- * 未手动设置内存时的默认堆大小：设备内存的约 55%，至少 1536MB（在设备
- * 允许的范围内），并以 [getMaxMemoryForSettings] 为上限。
+ * 未手动设置内存时的默认堆大小：由 Rust 引擎计算（设备内存的约 55%，
+ * 至少 1536MB，上限为设备允许的最大值）。
  * 256MB 的硬下限会让现代版本一进世界就内存溢出，这里给的是一个能玩的值。
  */
 @WorkerThread
-fun getDefaultRamAllocation(context: Context): Int {
-    val max = getMaxMemoryForSettings(context)
-    val target = (getTotalMemory(context).bytesToMB() * 0.55).toInt()
-    val floor = min(1536, max)
-    return max(target, floor).coerceAtMost(max)
-}
+fun getDefaultRamAllocation(context: Context): Int =
+    RustEngine.defaultRamAllocation(
+        getTotalMemory(context).bytesToMB().toInt(),
+        Architecture.is32BitsDevice
+    )
 
 /**
  * 转换为 MB 单位

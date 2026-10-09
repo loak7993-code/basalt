@@ -92,6 +92,16 @@ class ZLApplication : Application(), SingletonImageLoader.Factory {
 
             Logger.initialize(this)
 
+            // Engine liveness probe: proves the Rust library resolves in this
+            // process (main and :game both run this initializer).
+            try {
+                val probeJson = """{"id":"probe","mainClass":"x","libraries":[],"arguments":null}"""
+                val result = com.movtery.zalithlauncher.engine.RustEngine.probe(probeJson)
+                Logger.info("RustEngine", "Engine probe: $result")
+            } catch (th: Throwable) {
+                Logger.warning("RustEngine", "Engine probe failed", th)
+            }
+
             initializeData()
             PathManager.DIR_FILES_PRIVATE = getDir("files", MODE_PRIVATE)
             DEVICE_ARCHITECTURE = Architecture.getDeviceArchitecture()

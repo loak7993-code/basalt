@@ -86,7 +86,10 @@ launcher injects a tuned G1 baseline (`G1NewSizePercent=20`,
 ## Build, test, deploy
 
 ```bash
-./gradlew :engine:test                             # engine unit tests (real 26.3 manifest)
+./gradlew :engine:test                             # Kotlin engine tests (real 26.3 manifest)
+cd engine-rs && cargo test                         # Rust engine tests + device parity test
+cd engine-rs && cargo build --release --target aarch64-linux-android && \
+  cargo build --release --target x86_64-linux-android   # rebuild libbasalt_engine.so
 ./gradlew :ZalithLauncher:assembleDebug            # universal debug APK
 ./gradlew :ZalithLauncher:assembleDebug -Darch=x86_64   # single-ABI debug APK
 ./gradlew :ZalithLauncher:assembleRelease          # release APK, signed with basalt.jks
@@ -100,17 +103,21 @@ platform 37, build-tools 37, NDK 25.2.9519653, and accepted licenses.
 
 ```
 Basalt/
-  engine/                Basalt's own launch engine: manifest parsing, library
-                         rules, classpath, memory/GC policy, arg assembly,
-                         exec strategy; unit-tested against the real 26.3 manifest
+  engine-rs/             the launch engine in Rust (crate basalt_engine):
+                         manifest parsing, library rules, classpath, memory/GC
+                         policy, arg assembly, exec strategy, JNI surface;
+                         cargo test runs against the real 26.3 manifest
+  engine/                the Kotlin reference engine (same scope, same tests)
   ZalithLauncher/        the app: Compose UI, settings, accounts, downloads, launch pipeline
     src/main/java/com/movtery/zalithlauncher/
-      game/launch/       JVM launch pipeline, arg assembly, GC baseline
+      game/launch/       JVM launch pipeline, arg assembly, GC policy via Rust
+      engine/            RustEngine JNI bridge with Kotlin fallback
       game/download/     version/asset download engine (official Mojang endpoints)
       ui/screens/        Compose screens (home, download, accounts, settings, game)
       ui/theme/          Basalt palette, Geist typography
       components/jre/    bundled runtime unpacking (jre-8/17/21/25)
       jni/               native bridge (EGL/input/linker hooks), upstream
+      jniLibs/           libbasalt_engine.so (x86_64, arm64) built by cargo
     src/main/assets/runtimes/  bionic JRE builds per Java version
   LWJGL/                 upstream patched LWJGL (3.3.3, 3.4.1)
   Terracotta/            multiplayer room client

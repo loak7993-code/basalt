@@ -1,0 +1,6 @@
+# Android cross-compilation for the engine crate (minSdk 26).
+[target.aarch64-linux-android]
+linker = "/opt/android-sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android26-clang"
+
+[target.x86_64-linux-android]
+linker = "/opt/android-sdk/ndk/27.2.12479018/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android26-clang"

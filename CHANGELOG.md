@@ -3,6 +3,28 @@
 All notable changes to this fork are recorded here. Upstream history lives in
 the git lineage of the fork point.
 
+## 2.0.0 - 2026-10-09
+
+- The launch engine is now Rust (`engine-rs`, crate `basalt_engine`): version
+  manifest parsing, Mojang library rule evaluation, classpath construction,
+  memory and GC policies, argument assembly, and an exec strategy interface,
+  all as first-party Rust with serde models.
+- The full Kotlin engine test suite is ported and green (`cargo test`, 14
+  tests), including a parity test proving the Rust plan matches the args the
+  app actually launched with on-device (heap 1637M, tuned G1 baseline,
+  ActiveProcessorCount=4).
+- The Android app binds to the Rust engine over JNI
+  (`libbasalt_engine.so`, x86_64 + arm64, NDK 27, minSdk 26): the GC policy
+  and the device-proportional memory default now run through
+  `libbasalt_engine.so` in both the main and `:game` processes.
+- If the native library ever fails to load, every call degrades to the
+  identical Kotlin policy and logs the failure once, so a broken build cannot
+  change launch behavior.
+- Verified on the emulator: fresh launch through the `:game` process with zero
+  fallback warnings and identical args through the Rust path.
+- The Kotlin `:engine` module remains as the reference implementation and its
+  tests still run in Gradle builds.
+
 ## 1.2.0 - 2026-10-09
 
 - New `:engine` module, Basalt's own launch engine: version manifest parsing

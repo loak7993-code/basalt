@@ -16,20 +16,28 @@ upstream version 2.6.1 (commit d93722e, October 2026).
   account flow defaults, memory defaults, GC baseline) are new work in this
   repository, also GPL-3.0.
 
-### The engine boundary (Basalt 1.2.0)
+### The engine boundary (Basalt 2.0.0)
 
-Basalt's own launch engine lives in `engine/` and is licensed GPL-3.0 as part
-of this fork. It owns, as first-party code with unit tests against the real
-Mojang 26.3 manifest:
+Basalt's launch engine is Rust: `engine-rs/` (crate `basalt_engine`, GPL-3).
+It owns, as first-party Rust code with tests against the real Mojang 26.3
+manifest:
 
 - version manifest parsing (arguments, libraries, rules, logging config,
-  `default-user-jvm`)
+  `default-user-jvm`) via serde
 - library rule evaluation per platform (os, arch, features)
 - classpath construction and natives selection
 - memory policy and GC policy (the tuned phone-class G1 baseline)
 - full JVM and game argument assembly with placeholder substitution
 - the launch plan shape and an exec strategy interface (reference
   child-process implementation)
+- the JNI surface the Android host binds to (`libbasalt_engine.so`, built for
+  x86_64 and arm64 with NDK 27)
+
+A parity test proves the Rust plan matches the arguments the app actually
+launched with on-device. The app calls the Rust engine over JNI for launch
+policies (GC baseline, device-proportional memory default); the Kotlin
+`:engine` module remains as the reference implementation and its tests still
+run in Gradle builds.
 
 What the engine deliberately does NOT reimplement, because those are compiled
 artifacts from years of cross-compilation work rather than code that can be
@@ -39,6 +47,7 @@ re-derived from observation in a fork session:
 - the in-process JVM exec native bridge and linker hooks (libpojavexec and
   friends)
 - the patched LWJGL builds that bridge Android EGL/input into LWJGL
+- the Compose UI shell (Kotlin; the Rust engine is a library, not an app)
 
 The app binds its launch behavior to the engine through
 `gcPolicyFromArgs`/`applyTo` (the same helpers the engine's tests enforce), so
