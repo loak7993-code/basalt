@@ -33,12 +33,12 @@ import com.movtery.zalithlauncher.game.path.getVersionsHome
 import com.movtery.zalithlauncher.game.support.touch_controller.VibrationHandler
 import com.movtery.zalithlauncher.path.PathManager
 import com.movtery.zalithlauncher.setting.AllSettings
+import com.movtery.zalithlauncher.setting.unit.getOrMin
 import com.movtery.zalithlauncher.ui.screens.content.elements.QuickPlay
 import com.movtery.zalithlauncher.utils.GSON
 import com.movtery.zalithlauncher.utils.file.readText
 import com.movtery.zalithlauncher.utils.logging.Logger
 import com.movtery.zalithlauncher.utils.platform.getMaxMemoryForSettings
-import com.movtery.zalithlauncher.utils.platform.getDefaultRamAllocation
 import com.movtery.zalithlauncher.utils.string.isNotEmptyOrBlank
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -227,7 +227,7 @@ class Version(
 
     fun getRamAllocation(context: Context = GlobalContext): Int = versionConfig.ramAllocation.takeIf { it >= 256 }?.let {
         min(it, getMaxMemoryForSettings(context))
-    } ?: getDefaultRamAllocation(context)
+    } ?: AllSettings.ramAllocation.getOrMin()
 
     fun getTouchVibrateDuration(): Int? = versionConfig.touchVibrateDuration.takeIf { it >= 80 }
 

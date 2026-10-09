@@ -32,7 +32,6 @@ import com.movtery.zalithlauncher.bridge.ZLNativeInvoker
 import com.movtery.zalithlauncher.components.Components
 import com.movtery.zalithlauncher.components.UnpackComponentsTask
 import com.movtery.zalithlauncher.context.GlobalContext
-import com.movtery.zalithlauncher.utils.platform.getDefaultRamAllocation
 import com.movtery.zalithlauncher.game.multirt.Runtime
 import com.movtery.zalithlauncher.game.multirt.RuntimesManager
 import com.movtery.zalithlauncher.game.path.getGameHome
@@ -331,7 +330,7 @@ abstract class Launcher(
      */
     protected open fun progressFinalUserArgs(
         args: MutableList<String>,
-        ramAllocation: Int = getDefaultRamAllocation(GlobalContext)
+        ramAllocation: Int = AllSettings.ramAllocation.getOrMin()
     ) {
         args.purgeArg("-Xms")
         args.purgeArg("-Xmx")
