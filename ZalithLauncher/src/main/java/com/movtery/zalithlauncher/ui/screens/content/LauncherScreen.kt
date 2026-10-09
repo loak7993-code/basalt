@@ -28,12 +28,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.core.CubicBezierEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.scaleIn
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -42,6 +50,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -63,6 +72,7 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
@@ -71,7 +81,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.constraintlayout.compose.ConstraintLayout
+import com.movtery.zalithlauncher.ui.theme.GeistMono
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.movtery.zalithlauncher.ui.screens.content.navigateToDownload
 import com.movtery.cardgrid.state.rememberCardGridState
 import com.movtery.guide.GuideSide
 import com.movtery.guide.guideNode
@@ -180,6 +192,9 @@ fun LauncherScreen(
                     navigateToVersions(version)
                 }
             }
+            val toDownloadScreen: () -> Unit = {
+                backStackViewModel.navigateToDownload()
+            }
 
             // 内容区域
             Row(modifier = Modifier.fillMaxSize()) {
@@ -208,7 +223,8 @@ fun LauncherScreen(
                         onLaunchGame(version)
                     },
                     onQuickPlayServer = onQuickPlayServer,
-                    onOpenVersionSettings = navigateToVersions
+                    onOpenVersionSettings = navigateToVersions,
+                    toDownloadScreen = toDownloadScreen
                 )
                 }
 
@@ -257,6 +273,7 @@ private fun ContentMenu(
     onLaunchGame: (Version) -> Unit,
     onQuickPlayServer: (Version?, String) -> Unit,
     onOpenVersionSettings: (Version) -> Unit,
+    toDownloadScreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val yOffset by swapAnimateDpAsState(
@@ -264,19 +281,81 @@ private fun ContentMenu(
         swapIn = isVisible
     )
     val gridState = rememberCardGridState()
+    val versions by VersionsManager.versions.collectAsStateWithLifecycle()
+    val isRefreshing by VersionsManager.isRefreshing.collectAsStateWithLifecycle()
 
     CompositionLocalProvider(
         LocalHomeCardLauncher provides onLaunchGame,
         LocalHomeCardVersionSettings provides onOpenVersionSettings,
         LocalServerCardQuickPlay provides onQuickPlayServer
     ) {
-        HomeGrid(
-            state = gridState,
-            isVisible = isVisible,
-            modifier = modifier
+        if (!isRefreshing && versions.isEmpty()) {
+            HomeEmptyState(
+                isVisible = isVisible,
+                toDownload = toDownloadScreen,
+                modifier = modifier
+            )
+        } else {
+            HomeGrid(
+                state = gridState,
+                isVisible = isVisible,
+                modifier = modifier
+                    .fillMaxSize()
+                    .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
+            )
+        }
+    }
+}
+
+@Composable
+private fun HomeEmptyState(
+    isVisible: Boolean,
+    toDownload: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val enter: EnterTransition = fadeIn(
+        animationSpec = tween(220, delayMillis = 60, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+    ) + scaleIn(
+        initialScale = 0.96f,
+        animationSpec = tween(260, delayMillis = 60, easing = CubicBezierEasing(0.2f, 0f, 0f, 1f))
+    )
+
+    AnimatedVisibility(
+        visible = isVisible,
+        enter = enter,
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
                 .fillMaxSize()
-                .offset { IntOffset(x = 0, y = yOffset.roundToPx()) }
-        )
+                .padding(all = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                modifier = Modifier.size(40.dp),
+                painter = painterResource(R.drawable.ic_download_2_filled),
+                contentDescription = null,
+                tint = LocalContentColor.current.copy(alpha = 0.45f)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.home_empty_title),
+                style = MaterialTheme.typography.titleMedium,
+                maxLines = 1
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = stringResource(R.string.home_empty_body),
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                color = LocalContentColor.current.copy(alpha = 0.72f)
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            Button(onClick = toDownload) {
+                Text(text = stringResource(R.string.home_empty_button))
+            }
+        }
     }
 }
 
@@ -720,12 +799,12 @@ private fun VersionManagerLayout(
                         .weight(1f)
                         .align(Alignment.CenterVertically)
                 ) {
-                    Text(
-                        modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
-                        text = version.getVersionName(),
-                        style = MaterialTheme.typography.labelMedium,
-                        maxLines = 1
-                    )
+                Text(
+                    modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
+                    text = version.getVersionName(),
+                    style = MaterialTheme.typography.labelMedium.copy(fontFamily = GeistMono),
+                    maxLines = 1
+                )
                     if (version.isValid()) {
                         Text(
                             modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),

@@ -327,7 +327,7 @@ private fun CardNameText(
                 .then(if (version == null) Modifier.alpha(0.55f) else Modifier),
             maxLines = 1,
             text = name,
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelLarge.copy(fontFamily = GeistMono)
         )
     }
 }

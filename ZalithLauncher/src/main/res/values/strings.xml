@@ -405,6 +405,9 @@
     <string name="version_summary_fools_herd_craft">Stop organizing your inventory—your items and blocks want to run wild with you!</string>
     <!-- Game Launch -->
     <string name="game_launch_no_version">No game version selected!</string>
+    <string name="home_empty_title">No versions installed</string>
+    <string name="home_empty_body">Pick a release and install it from the official list. 26.3 is at the top.</string>
+    <string name="home_empty_button">Download a version</string>
     <string name="game_launch_no_account">No account logged in!</string>
     <string name="game_auto_pick_runtime_failed">No compatible runtime found. Using selected version\'s runtime.</string>
     <string name="game_button_input">Input Method</string>

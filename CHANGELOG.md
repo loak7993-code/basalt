@@ -3,6 +3,17 @@
 All notable changes to this fork are recorded here. Upstream history lives in
 the git lineage of the fork point.
 
+## 1.1.0 - 2026-10-09
+
+- Empty home now carries its own action: when no versions are installed, the
+  card grid area shows a compact empty state with a working "Download a
+  version" button that opens the download screen.
+- Version names on home cards and in the version row render in Geist Mono,
+  matching the download list.
+- Verified the game console persists to disk per version (`versions/<name>/
+  Basalt/`); the JVM args section is now inspectable after a crash instead of
+  living only in the on-screen log view.
+
 ## 1.0.0 - 2026-10-09
 
 Fork of ZalithLauncher2, upstream 2.6.1 (commit d93722e).
