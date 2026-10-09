@@ -249,12 +249,20 @@ function App() {
                   Universal APK with the Java 25 runtime inside. Sideload it:
                   allow install-from-unknown-sources, done.
                 </p>
-                <div className="mt-6">
+                <div className="mt-6 flex flex-wrap gap-3">
                   <a
-                    href="https://github.com/Leonxlnx/Basalt/releases"
+                    href="/dl/Basalt-2.0.0-universal.apk"
                     className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition-transform active:scale-[0.98] hover:bg-emerald-300"
                   >
                     Get the APK
+                    <span className="font-mono text-xs font-normal opacity-80">400 MB</span>
+                  </a>
+                  <a
+                    href="/dl/Basalt-2.0.0-arm64-v8a.apk"
+                    className="inline-flex items-center gap-2 rounded-lg border border-white/10 px-5 py-2.5 text-sm font-medium text-zinc-200 transition-colors hover:border-accent/40 hover:text-white"
+                  >
+                    arm64 only
+                    <span className="font-mono text-xs text-zinc-500">182 MB</span>
                   </a>
                 </div>
               </div>
@@ -264,15 +272,23 @@ function App() {
                 <IconTerminal size={24} className="text-accent/70" />
                 <h3 className="mt-4 text-xl font-semibold">Linux</h3>
                 <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-                  One portable AppImage. Needs Java 25 and internet: it
-                  downloads the game from Mojang, then plays it.
+                  One portable AppImage with a GUI window and the CLI inside.
+                  Needs Java 25 and internet: it downloads the game from
+                  Mojang, then plays it.
                 </p>
-                <div className="mt-6 rounded-lg bg-black/50 p-4 font-mono text-sm text-zinc-300">
-                  <span className="text-zinc-600">$</span> ./Basalt-x86_64.AppImage account myname
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <a
+                    href="/dl/Basalt-2.0.0-x86_64.AppImage"
+                    className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition-transform active:scale-[0.98] hover:bg-emerald-300"
+                  >
+                    Get the AppImage
+                    <span className="font-mono text-xs font-normal opacity-80">6.6 MB</span>
+                  </a>
+                </div>
+                <div className="mt-4 rounded-lg bg-black/50 p-4 font-mono text-xs text-zinc-300">
+                  <span className="text-zinc-600">$</span> chmod +x Basalt-2.0.0-x86_64.AppImage
                   <br />
-                  <span className="text-zinc-600">$</span> ./Basalt-x86_64.AppImage install 26.3
-                  <br />
-                  <span className="text-zinc-600">$</span> ./Basalt-x86_64.AppImage play 26.3
+                  <span className="text-zinc-600">$</span> ./Basalt-2.0.0-x86_64.AppImage install 26.3
                 </div>
               </div>
             </Reveal>

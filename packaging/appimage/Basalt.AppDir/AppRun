@@ -1,4 +1,7 @@
 #!/bin/sh
-# Basalt AppRun: exec the CLI with all arguments.
+# Basalt AppRun: no args opens the GUI; any args pass through to the CLI.
 HERE="$(dirname "$(readlink -f "$0")")"
+if [ "$#" -eq 0 ]; then
+  exec "$HERE/usr/bin/basalt-gui" "$@"
+fi
 exec "$HERE/usr/bin/basalt" "$@"

@@ -5,6 +5,7 @@ use crate::paths;
 use basalt_engine::manifest::VersionManifest;
 use basalt_engine::rules::{Features, RuleContext};
 use std::fs;
+use std::sync::Arc;
 use std::path::PathBuf;
 
 const MANIFEST_URL: &str =
@@ -13,8 +14,6 @@ const MANIFEST_URL: &str =
 #[derive(serde::Deserialize)]
 struct VersionEntry {
     id: String,
-    #[serde(rename = "type")]
-    kind: String,
     url: String,
 }
 
@@ -116,21 +115,42 @@ fn extract_natives(manifest: &VersionManifest, context: &RuleContext) -> Result<
 }
 
 pub fn run(explicit: Option<&str>) -> i32 {
+    match run_flow(explicit, Arc::new(move |line| println!("{line}"))) {
+        Ok(message) => {
+            println!("{message}");
+            0
+        }
+        Err(lines) => {
+            for line in &lines {
+                eprintln!("{line}");
+            }
+            1
+        }
+    }
+}
+
+/// Installs a version. Progress lines stream through [progress]; a successful
+/// return carries the final "installed: <path>" line, a failed one carries all
+/// error lines. Shared by the CLI and the GUI.
+pub fn run_flow(
+    explicit: Option<&str>,
+    progress: std::sync::Arc<dyn Fn(String) + Send + Sync>,
+) -> Result<String, Vec<String>> {
+    let mut errors: Vec<String> = Vec::new();
+    let fail = |errors: &mut Vec<String>, message: String| -> Result<String, Vec<String>> {
+        errors.push(message);
+        Err(std::mem::take(errors))
+    };
+
     let (id, version_url) = match pick_version(explicit) {
         Ok(found) => found,
-        Err(err) => {
-            eprintln!("error: {err}");
-            return 1;
-        }
+        Err(err) => return fail(&mut errors, format!("error: {err}")),
     };
-    println!("installing {} ...", id);
+    (progress)(format!("installing {} ...", id));
 
     let manifest: VersionManifest = match fetch_json(&version_url) {
         Ok(manifest) => manifest,
-        Err(err) => {
-            eprintln!("error: {err}");
-            return 1;
-        }
+        Err(err) => return fail(&mut errors, format!("error: {err}")),
     };
     let context = RuleContext {
         platform: crate::accounts::platform(),
@@ -146,8 +166,7 @@ pub fn run(explicit: Option<&str>) -> i32 {
     // launch uses the same data the install verified.
     let manifest_text = serde_json::to_string_pretty(&manifest).expect("manifest serializes");
     if let Err(err) = fs::write(version_dir.join(format!("{id}.json")), manifest_text) {
-        eprintln!("error: write version json: {err}");
-        return 1;
+        return fail(&mut errors, format!("error: write version json: {err}"));
     }
 
     // 1. client jar
@@ -207,62 +226,63 @@ pub fn run(explicit: Option<&str>) -> i32 {
         });
     }
 
-    println!("downloading {} files ...", tasks.len());
-    let failures = run_all(tasks, 16, |done, total| {
-        if done % 250 == 0 || done == total {
-            println!("  {}/{}", done, total);
+    progress(format!("downloading {} files ...", tasks.len()));
+    let failures = run_all(tasks, 16, Arc::new({
+        let progress = Arc::clone(&progress);
+        move |done, total| {
+            if done % 250 == 0 || done == total {
+                (progress)(format!("  {}/{}", done, total));
+            }
         }
-    });
+    }));
     if !failures.is_empty() {
-        eprintln!("error: {} file(s) failed:", failures.len());
+        errors.push(format!("error: {} file(s) failed:", failures.len()));
         for (path, err) in failures.iter().take(10) {
-            eprintln!("  {}: {}", path.display(), err);
+            errors.push(format!("  {}: {}", path.display(), err));
         }
-        return 1;
+        return Err(std::mem::take(&mut errors));
     }
 
     // 4. asset objects (content-addressed CDN; fan out after the index)
     if let Some(asset_index) = &manifest.asset_index {
         let objects = match asset_objects(&asset_index.url) {
             Ok(objects) => objects,
-            Err(err) => {
-                eprintln!("error: asset index objects: {err}");
-                return 1;
-            }
+            Err(err) => return fail(&mut errors, format!("error: asset index objects: {err}")),
         };
-        println!("downloading {} asset objects ...", objects.len());
+        (progress)(format!("downloading {} asset objects ...", objects.len()));
         let base = "https://resources.download.minecraft.net";
         let asset_tasks: Vec<FetchTask> = objects
             .into_iter()
-            .map(|(name, obj)| FetchTask {
+            .map(|(_name, obj)| FetchTask {
                 urls: vec![format!("{}/{}/{}", base, &obj.hash[..2], obj.hash)],
                 target: paths::assets_dir().join("objects").join(&obj.hash[..2]).join(&obj.hash),
                 expected_sha1: Some(obj.hash.clone()),
                 expected_size: obj.size,
             })
             .collect();
-        let failures = run_all(asset_tasks, 24, |done, total| {
-            if done % 500 == 0 || done == total {
-                println!("  {}/{}", done, total);
+        let failures = run_all(asset_tasks, 24, Arc::new({
+            let progress = Arc::clone(&progress);
+            move |done, total| {
+                if done % 500 == 0 || done == total {
+                    (progress)(format!("  {}/{}", done, total));
+                }
             }
-        });
+        }));
         if !failures.is_empty() {
-            eprintln!("error: {} asset object(s) failed:", failures.len());
+            errors.push(format!("error: {} asset object(s) failed:", failures.len()));
             for (path, err) in failures.iter().take(10) {
-                eprintln!("  {}: {}", path.display(), err);
+                errors.push(format!("  {}: {}", path.display(), err));
             }
-            return 1;
+            return Err(std::mem::take(&mut errors));
         }
     }
 
     // 5. natives
     if let Err(err) = extract_natives(&manifest, &context) {
-        eprintln!("error: natives: {err}");
-        return 1;
+        return fail(&mut errors, format!("error: natives: {err}"));
     }
 
-    println!("installed: {}", version_dir.display());
-    0
+    Ok(format!("installed: {}", version_dir.display()))
 }
 
 pub fn list() -> i32 {

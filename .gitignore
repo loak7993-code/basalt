@@ -32,3 +32,8 @@ LWJGL/*/build/
 .ampersand/
 
 .vscode/
+website/node_modules/
+website/dist/
+website/public/dl/
+packaging/appimage/Basalt.AppDir/usr/
+packaging/appimage/*.AppImage

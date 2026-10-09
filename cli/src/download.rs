@@ -103,7 +103,7 @@ fn download_one(url: &str, target: &Path, expected_sha1: Option<&str>) -> Result
 pub fn run_all(
     tasks: Vec<FetchTask>,
     workers: usize,
-    progress: impl Fn(usize, usize) + Send + Sync + 'static,
+    progress: Arc<dyn Fn(usize, usize) + Send + Sync>,
 ) -> Vec<(PathBuf, String)> {
     let total = tasks.len();
     let done = Arc::new(AtomicUsize::new(0));

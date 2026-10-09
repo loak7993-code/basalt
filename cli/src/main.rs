@@ -8,13 +8,9 @@
  * (at your option) any later version.
  */
 
-mod accounts;
-mod download;
-mod install;
-mod java;
-mod launch;
-mod paths;
 
+
+use basalt_cli::{accounts, install, launch, paths};
 use clap::{Parser, Subcommand};
 
 #[derive(Parser)]

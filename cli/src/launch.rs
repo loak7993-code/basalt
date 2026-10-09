@@ -5,6 +5,7 @@ use basalt_engine::exec::{ChildProcessExec, ExecStrategy};
 use basalt_engine::manifest::VersionManifest;
 use basalt_engine::plan::{AuthContext, EngineOptions, InstallLayout, MemoryOptions, PlanBuilder};
 use std::fs;
+use std::sync::Arc;
 use std::path::PathBuf;
 
 pub fn run(
@@ -14,21 +15,38 @@ pub fn run(
     jvm_args: &[String],
     ram: Option<i64>,
 ) -> i32 {
+    let sink: Arc<dyn Fn(String) + Send + Sync> =
+        Arc::new(move |line: String| println!("{line}"));
+    match run_flow(version, name, server, jvm_args, ram, sink) {
+        Ok(code) => code,
+        Err(message) => {
+            eprintln!("error: {message}");
+            1
+        }
+    }
+}
+
+/// Builds the plan and executes the game JVM, streaming output lines through
+/// [progress]. Returns the process exit code; Err carries a setup failure.
+pub fn run_flow(
+    version: Option<&str>,
+    name: Option<&str>,
+    server: Option<&str>,
+    jvm_args: &[String],
+    ram: Option<i64>,
+    progress: Arc<dyn Fn(String) + Send + Sync>,
+) -> Result<i32, String> {
     let id: String = match version {
         Some(id) => id.to_string(),
         None => match latest_installed() {
             Some(id) => id,
-            None => {
-                eprintln!("error: no versions installed; run `basalt install` first");
-                return 1;
-            }
+            None => return Err("no versions installed; run `basalt install` first".into()),
         },
     };
     let version_json = paths::version_dir(&id).join(format!("{id}.json"));
     let client_jar = paths::version_dir(&id).join(format!("{id}.jar"));
     if !version_json.exists() || !client_jar.exists() {
-        eprintln!("error: version {} is not installed", id);
-        return 1;
+        return Err(format!("version {} is not installed", id));
     }
 
     let manifest: VersionManifest = match fs::read_to_string(&version_json)
@@ -36,14 +54,10 @@ pub fn run(
         .and_then(|raw| serde_json::from_str(&raw).ok())
     {
         Some(manifest) => manifest,
-        None => {
-            eprintln!("error: failed to parse {}", version_json.display());
-            return 1;
-        }
+        None => return Err(format!("failed to parse {}", version_json.display())),
     };
     let Some(account) = accounts::for_name(name) else {
-        eprintln!("error: no account; run `basalt account <name>` or pass --name");
-        return 1;
+        return Err("no account; run `basalt account <name>` or pass --name".into());
     };
 
     let required_major = manifest
@@ -52,13 +66,16 @@ pub fn run(
         .map(|j| j.major_version)
         .unwrap_or(8);
     let Some(runtime) = java::find(required_major) else {
-        eprintln!(
-            "error: no Java {}+ found; install it (e.g. `sudo pacman -S jre25-openjdk`) or set JAVA_HOME",
+        return Err(format!(
+            "no Java {}+ found; install it (e.g. `sudo pacman -S jre25-openjdk`) or set JAVA_HOME",
             required_major
-        );
-        return 1;
+        ));
     };
-    println!("java: {} (major {})", runtime.java_bin.display(), runtime.major);
+    (progress)(format!(
+        "java: {} (major {})",
+        runtime.java_bin.display(),
+        runtime.major
+    ));
 
     let asset_index_id = manifest
         .asset_index
@@ -129,18 +146,18 @@ pub fn run(
 
     fs::create_dir_all(&layout.game_dir).ok();
 
-    println!(
+    (progress)(format!(
         "launching {} with {} ({}M heap, {} args)",
         id,
         account.player_name,
         heap_mb,
         plan.jvm_args.len()
-    );
+    ));
 
     let exec = ChildProcessExec;
-    exec.exec(&plan, &runtime.java_bin.to_string_lossy(), &mut |line| {
-        println!("{}", line);
-    })
+    Ok(exec.exec(&plan, &runtime.java_bin.to_string_lossy(), &mut |line| {
+        (progress)(line.to_string());
+    }))
 }
 
 fn latest_installed() -> Option<String> {
