@@ -16,6 +16,7 @@ fn app_options() -> EngineOptions {
         extra_game_args: vec![],
         active_processors: Some(4),
         strip_always_pre_touch: true,
+        ..Default::default()
     }
 }
 

@@ -35,10 +35,10 @@ object RustDownloader {
 
     val available: Boolean = try {
         System.loadLibrary("basalt_engine")
-        Logger.info(TAG, "Rust downloader active")
+        Logger.info(TAG, "Rust engine active (downloader + plan builder)")
         true
     } catch (th: Throwable) {
-        Logger.warning(TAG, "Rust downloader unavailable; using the Kotlin engine", th)
+        Logger.warning(TAG, "Rust engine unavailable; using the Kotlin engine", th)
         false
     }
 
@@ -105,4 +105,54 @@ object RustDownloader {
     private external fun nativeDownloadStart(tasksJson: String, workers: Int): Int
     private external fun nativeDownloadProgress(jobId: Int): String
     private external fun nativeDownloadWait(jobId: Int): String
+
+    @Serializable
+    data class LaunchPlan(
+        val jvmArgs: List<String>,
+        val gameArgs: List<String>,
+        val mainClass: String,
+        val classpath: List<String>,
+        val classpathString: String,
+        val wrapperClass: String? = null,
+        val requiredJavaMajor: Long? = null
+    )
+
+    /**
+     * Builds the manifest-derived argument plan through the Rust engine in
+     * Android mode: string entries only, placeholders intact (the host
+     * substitutes through its own varArgMap), default-user-jvm skipped,
+     * memory/GC left to the host's own policy step. Returns null on any
+     * failure so the caller falls back to the Kotlin assembly.
+     */
+    fun buildPlan(manifestJson: String, versionName: String): LaunchPlan? {
+        if (!available) return null
+        return runCatching {
+            val layout = """{"clientJar":"/dev/null","librariesDir":"/lib","nativesDir":"/nat","gameDir":"/g","assetsDir":"/a","assetIndexId":"x","runtimeHome":"/"}"""
+            val auth = """{"playerName":"x","uuid":"x"}"""
+            val raw = nativeBuildPlan(
+                manifestJson,
+                layout,
+                """{"ignoreDefaultUserJvm":true,"stringsOnly":true,"substituteClasspath":false,"stripAlwaysPreTouch":false}""",
+                auth,
+                "null",
+                "linux",
+                "x86_64",
+                versionName
+            )
+            json.decodeFromString(LaunchPlan.serializer(), raw)
+        }.onFailure {
+            Logger.warning(TAG, "Rust buildPlan failed, using the Kotlin assembly", it)
+        }.getOrNull()
+    }
+
+    private external fun nativeBuildPlan(
+        manifestJson: String,
+        layoutJson: String,
+        optionsJson: String,
+        authJson: String,
+        quickPlayJson: String,
+        platformOs: String,
+        platformArch: String,
+        versionName: String
+    ): String
 }

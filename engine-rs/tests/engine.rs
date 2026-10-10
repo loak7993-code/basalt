@@ -42,6 +42,7 @@ fn default_options() -> EngineOptions {
         extra_game_args: vec![],
         active_processors: Some(8),
         strip_always_pre_touch: true,
+        ..Default::default()
     }
 }
 
@@ -229,4 +230,43 @@ fn platform_mapping() {
     assert_eq!(Platform::from("Linux", "amd64"), Some(Platform::LinuxX8664));
     assert_eq!(Platform::from("windows", "amd64"), None);
     assert_eq!(Platform::from("linux", "i386"), None);
+}
+
+#[test]
+fn android_mode_matches_upstream_string_only_semantics() {
+    // The Android launch path evaluates only plain-string entries, keeps
+    // placeholders intact, and skips default-user-jvm — matching what the
+    // upstream Kotlin assembler produced for 26.3.
+    let m = manifest();
+    let mut options = EngineOptions::default();
+    options.ignore_default_user_jvm = true;
+    options.strings_only = true;
+    options.substitute_classpath = false;
+    let l = layout();
+    let a = auth();
+    let b = PlanBuilder {
+        manifest: &m,
+        platform: Platform::LinuxX8664,
+        layout: &l,
+        features: Default::default(),
+        options: options.clone(),
+        auth: a.clone(),
+        version_name: "26.3".into(),
+        version_type: "release".into(),
+        quick_play: None,
+        log_config_path: None,
+    };
+    let plan = b.build();
+    // Manifest jvm strings survive untouched (no substitution applied).
+    assert!(plan.jvm_args.contains(&"-XX:StackShadowPages=32".to_string()));
+    assert!(plan.jvm_args.contains(&"--enable-native-access=ALL-UNNAMED".to_string()));
+    assert!(plan.jvm_args.contains(&"-Djava.library.path=${natives_directory}/java".to_string()));
+    // default-user-jvm flags are absent.
+    assert!(!plan.jvm_args.contains(&"-XX:+UseCompactObjectHeaders".to_string()));
+    assert!(!plan.jvm_args.contains(&"-XX:+UseZGC".to_string()));
+    // Game strings intact with placeholders for the host to fill.
+    assert!(plan.game_args.contains(&"${auth_player_name}".to_string()));
+    assert!(!plan.game_args.iter().any(|a| a.contains("${classpath}")));
+    // The osx-gated -XstartOnFirstThread stays excluded on linux.
+    assert!(!plan.jvm_args.contains(&"-XstartOnFirstThread".to_string()));
 }

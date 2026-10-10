@@ -81,6 +81,7 @@ class GameLauncher(
     openPath: (folder: File) -> Unit
 ) : Launcher(onExit, openPath) {
     private lateinit var gameManifest: GameManifest
+    private var gameJson: String = ""
     private var jnaDir: File? = null
     private val offlineServer = OfflineYggdrasilServer(0)
 
@@ -110,6 +111,7 @@ class GameLauncher(
         } ?: version.getClientJar()
 
         gameManifest = version.launchManifest?.let { json ->
+            gameJson = json
             runCatching {
                 GSON.fromJson(json, GameManifest::class.java)
             }.onFailure {
@@ -252,6 +254,7 @@ class GameLauncher(
             version = version,
             clientJar = clientJar,
             gameManifest = gameManifest,
+            gameJson = gameJson,
             lwjglVersion = lwjglVersion,
             runtime = runtime,
             readAssetsFile = { path -> activity.readAssetFile(path) },

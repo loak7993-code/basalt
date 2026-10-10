@@ -22,6 +22,7 @@ import androidx.collection.ArrayMap
 import com.movtery.zalithlauncher.BuildConfig
 import com.movtery.zalithlauncher.BuildKeys
 import com.movtery.zalithlauncher.bridge.LoggerBridge
+import com.movtery.zalithlauncher.engine.RustDownloader
 import com.movtery.zalithlauncher.game.account.Account
 import com.movtery.zalithlauncher.game.account.isAuthServerAccount
 import com.movtery.zalithlauncher.game.account.isLocalAccount
@@ -60,6 +61,7 @@ class LaunchArgs(
     private val version: Version,
     private val clientJar: File,
     private val gameManifest: GameManifest,
+    private val gameJson: String,
     private val lwjglVersion: Int,
     private val runtime: Runtime,
     private val readAssetsFile: (path: String) -> String,
@@ -283,10 +285,22 @@ class LaunchArgs(
             }
         }
 
-        val jvmArgs = gameManifest.arguments?.jvm
-            ?.mapNotNull { it.processJvmArg() }
-            ?.toTypedArray()
-            ?: emptyArray()
+        val rustPlan = RustDownloader.buildPlan(
+            gameJson,
+            gameManifest.id
+        )
+        val jvmArgs: Array<String> = if (rustPlan != null) {
+            // Rust path: evaluated string entries, placeholders intact for
+            // insertJSONValueList below. The app-specific rewrites still apply.
+            rustPlan.jvmArgs
+                .mapNotNull { arg -> arg.processJvmArg() }
+                .toTypedArray()
+        } else {
+            gameManifest.arguments?.jvm
+                ?.mapNotNull { it.processJvmArg() }
+                ?.toTypedArray()
+                ?: emptyArray()
+        }
 
         val replacedArgs = insertJSONValueList(jvmArgs, varArgMap)
         return if (hasClasspath) {
@@ -372,9 +386,18 @@ class LaunchArgs(
         setLauncherInfo(varArgMap)
 
         val minecraftArgs: MutableList<String> = ArrayList()
-        gameManifest.arguments?.apply {
-            // Support Minecraft 1.13+
-            game.forEach { if (it is String) minecraftArgs.add(it) }
+        val rustPlan = RustDownloader.buildPlan(
+            gameJson,
+            gameManifest.id
+        )
+        if (rustPlan != null) {
+            // Rust path: evaluated string entries, placeholders intact.
+            minecraftArgs.addAll(rustPlan.gameArgs)
+        } else {
+            gameManifest.arguments?.apply {
+                // Support Minecraft 1.13+
+                game.forEach { if (it is String) minecraftArgs.add(it) }
+            }
         }
 
         return insertJSONValueList(

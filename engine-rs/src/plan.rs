@@ -115,6 +115,17 @@ pub struct EngineOptions {
     pub active_processors: Option<i64>,
     #[serde(default = "default_true")]
     pub strip_always_pre_touch: bool,
+    /// Skip `arguments.default-user-jvm` evaluation (Android hosts apply their
+    /// own memory/GC policy after; Mojang's desktop defaults would conflict).
+    #[serde(default)]
+    pub ignore_default_user_jvm: bool,
+    /// Evaluate only plain-string argument entries and skip value substitution,
+    /// matching launchers that substitute variables through their own maps.
+    #[serde(default)]
+    pub strings_only: bool,
+    /// Disable ${classpath} substitution (the host composes its own classpath).
+    #[serde(default)]
+    pub substitute_classpath: bool,
 }
 
 fn default_true() -> bool {
@@ -163,7 +174,9 @@ impl<'a> PlanBuilder<'a> {
 
         if let Some(args) = &self.manifest.arguments {
             self.evaluate_into(&args.jvm, &mut jvm_args);
-            self.evaluate_into(&args.default_user_jvm, &mut jvm_args);
+            if !self.options.ignore_default_user_jvm {
+                self.evaluate_into(&args.default_user_jvm, &mut jvm_args);
+            }
         }
 
         if let (Some(path), Some(logging)) = (&self.log_config_path, &self.manifest.logging) {
@@ -288,8 +301,13 @@ impl<'a> PlanBuilder<'a> {
     fn evaluate_into(&self, entries: &[serde_json::Value], out: &mut Vec<String>) {
         for entry in entries {
             match entry {
-                serde_json::Value::String(s) => out.push(self.substitute(s)),
-                serde_json::Value::Object(obj) => {
+                serde_json::Value::String(s) => out.push(if self.options.strings_only {
+                    // Host substitutes variables through its own map.
+                    s.clone()
+                } else {
+                    self.substitute(s)
+                }),
+                serde_json::Value::Object(obj) if !self.options.strings_only => {
                     if let Some(rules) = obj.get("rules").and_then(|r| {
                         serde_json::from_value::<Vec<crate::manifest::LibraryRule>>(r.clone()).ok()
                     }) {
@@ -327,6 +345,10 @@ impl<'a> PlanBuilder<'a> {
     }
 
     fn substitute(&self, raw: &str) -> String {
+        if !self.options.substitute_classpath && raw.contains("${classpath}") {
+            // Host composes the classpath; leave the placeholder untouched.
+            return raw.to_string();
+        }
         let classpath = self.build_classpath().join(":");
         let width = self
             .features
