@@ -115,7 +115,25 @@ fn extract_natives(manifest: &VersionManifest, context: &RuleContext) -> Result<
 }
 
 pub fn run(explicit: Option<&str>) -> i32 {
-    match run_flow(explicit, Arc::new(move |line| println!("{line}"))) {
+    let bytes_sink = Arc::new(|p: crate::download::ByteProgress| {
+        print!(
+            "\r  {}/{} files · {} / {}     ",
+            p.done,
+            p.total,
+            crate::download::human_bytes(p.bytes_done),
+            crate::download::human_bytes(p.bytes_total)
+        );
+        if p.done == p.total {
+            println!();
+        }
+        use std::io::Write;
+        let _ = std::io::stdout().flush();
+    });
+    match run_flow(
+        explicit,
+        Arc::new(move |line| println!("{line}")),
+        bytes_sink,
+    ) {
         Ok(message) => {
             println!("{message}");
             0
@@ -135,6 +153,7 @@ pub fn run(explicit: Option<&str>) -> i32 {
 pub fn run_flow(
     explicit: Option<&str>,
     progress: std::sync::Arc<dyn Fn(String) + Send + Sync>,
+    byte_progress: std::sync::Arc<dyn Fn(crate::download::ByteProgress) + Send + Sync>,
 ) -> Result<String, Vec<String>> {
     let mut errors: Vec<String> = Vec::new();
     let fail = |errors: &mut Vec<String>, message: String| -> Result<String, Vec<String>> {
@@ -227,12 +246,17 @@ pub fn run_flow(
     }
 
     progress(format!("downloading {} files ...", tasks.len()));
-    let failures = run_all(tasks, 16, Arc::new({
-        let progress = Arc::clone(&progress);
-        move |done, total| {
-            if done % 250 == 0 || done == total {
-                (progress)(format!("  {}/{}", done, total));
-            }
+    let progress_libs = Arc::clone(&progress);
+    let byte_progress_libs = Arc::clone(&byte_progress);
+    let failures = run_all(tasks, 16, Arc::new(move |p| {
+        (byte_progress_libs)(p);
+        if p.done % 250 == 0 || p.done == p.total {
+            (progress_libs)(format!(
+                "  {}/{} · {}",
+                p.done,
+                p.total,
+                crate::download::human_bytes(p.bytes_done)
+            ));
         }
     }));
     if !failures.is_empty() {
@@ -249,7 +273,7 @@ pub fn run_flow(
             Ok(objects) => objects,
             Err(err) => return fail(&mut errors, format!("error: asset index objects: {err}")),
         };
-        (progress)(format!("downloading {} asset objects ...", objects.len()));
+        (progress.clone())(format!("downloading {} asset objects ...", objects.len()));
         let base = "https://resources.download.minecraft.net";
         let asset_tasks: Vec<FetchTask> = objects
             .into_iter()
@@ -260,12 +284,17 @@ pub fn run_flow(
                 expected_size: obj.size,
             })
             .collect();
-        let failures = run_all(asset_tasks, 24, Arc::new({
-            let progress = Arc::clone(&progress);
-            move |done, total| {
-                if done % 500 == 0 || done == total {
-                    (progress)(format!("  {}/{}", done, total));
-                }
+        let progress_assets = Arc::clone(&progress);
+        let byte_progress = Arc::clone(&byte_progress);
+        let failures = run_all(asset_tasks, 24, Arc::new(move |p| {
+            (byte_progress)(p);
+            if p.done % 500 == 0 || p.done == p.total {
+                (progress_assets)(format!(
+                    "  {}/{} · {}",
+                    p.done,
+                    p.total,
+                    crate::download::human_bytes(p.bytes_done)
+                ));
             }
         }));
         if !failures.is_empty() {

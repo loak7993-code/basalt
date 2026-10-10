@@ -19,7 +19,18 @@ enum Job {
 
 enum InstallEvent {
     Log(String),
+    Progress(ByteProgress),
     Done(Result<String, Vec<String>>),
+}
+
+use basalt_cli::download::ByteProgress;
+
+#[derive(Default, Clone, Copy)]
+struct ProgressState {
+    done: usize,
+    total: usize,
+    bytes_done: u64,
+    bytes_total: u64,
 }
 
 #[derive(Default)]
@@ -27,6 +38,7 @@ struct App {
     account_name: String,
     version_input: String,
     install_log: Vec<String>,
+    progress: ProgressState,
     job: Option<Job>,
     versions: Vec<String>,
 }
@@ -112,6 +124,7 @@ impl App {
             account_name: account,
             version_input: String::new(),
             install_log: Vec::new(),
+            progress: ProgressState::default(),
             job: None,
             versions,
         }
@@ -123,12 +136,18 @@ impl App {
         let progress = Arc::new(move |line: String| {
             let _ = progress_tx.send(InstallEvent::Log(line));
         });
+        let bytes_tx = tx.clone();
+        let bytes_cb = Arc::new(move |p: ByteProgress| {
+            let _ = bytes_tx.send(InstallEvent::Progress(p));
+        });
         let done_tx = tx.clone();
         std::thread::spawn(move || {
-            let result = basalt_cli::install::run_flow(version.as_deref(), progress);
+            let result =
+                basalt_cli::install::run_flow(version.as_deref(), progress, bytes_cb);
             let _ = done_tx.send(InstallEvent::Done(result));
         });
         self.install_log.clear();
+        self.progress = ProgressState::default();
         self.job = Some(Job::Installing(rx));
     }
 
@@ -188,6 +207,14 @@ impl eframe::App for App {
                         if self.install_log.len() > 200 {
                             self.install_log.drain(0..self.install_log.len() - 200);
                         }
+                    }
+                    Ok(InstallEvent::Progress(p)) => {
+                        self.progress = ProgressState {
+                            done: p.done,
+                            total: p.total,
+                            bytes_done: p.bytes_done,
+                            bytes_total: p.bytes_total,
+                        };
                     }
                     Ok(InstallEvent::Done(result)) => {
                         match result {
@@ -321,6 +348,31 @@ impl eframe::App for App {
                             }
                             let _ = field;
                         });
+                        if self.job.is_some() && self.progress.total > 0 {
+                            ui.add_space(6.0);
+                            let fraction = if self.progress.bytes_total > 0 {
+                                self.progress.bytes_done as f32 / self.progress.bytes_total as f32
+                            } else {
+                                self.progress.done as f32 / self.progress.total.max(1) as f32
+                            };
+                            ui.add(
+                                egui::ProgressBar::new(fraction.clamp(0.0, 1.0))
+                                    .show_percentage()
+                                    .desired_height(14.0),
+                            );
+                            ui.label(
+                                egui::RichText::new(format!(
+                                    "{}/{} files · {} / {}",
+                                    self.progress.done,
+                                    self.progress.total,
+                                    basalt_cli::download::human_bytes(self.progress.bytes_done),
+                                    basalt_cli::download::human_bytes(self.progress.bytes_total),
+                                ))
+                                .monospace()
+                                .size(11.5)
+                                .color(TEXT_DIM),
+                            );
+                        }
                     });
                 });
                 ui.add_space(8.0);
