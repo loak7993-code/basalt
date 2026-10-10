@@ -5,6 +5,16 @@ the git lineage of the fork point.
 
 ## 2.0.0 - 2026-10-09
 
+Update (2026-10-10): the Android download engine now runs in Rust too. The
+`basalt_engine` download module (shared keep-alive agent, bounded workers,
+60s timeouts, 3-attempt retries with URL rotation, SHA1 verification,
+byte-accurate progress) is bound over JNI with a job-based API
+(start/progress/wait) and replaces the Kotlin `BatchDownloader` transfer path
+for version installs, with the Kotlin engine kept as fallback. Measured on
+the emulator with fresh 26.3 installs back to back: Kotlin engine 120s, Rust
+engine 37s — 3.2x faster. Verified: no fallback warnings during the Rust-path
+launch, install completes with zero failures.
+
 - The launch engine is now Rust (`engine-rs`, crate `basalt_engine`): version
   manifest parsing, Mojang library rule evaluation, classpath construction,
   memory and GC policies, argument assembly, and an exec strategy interface,

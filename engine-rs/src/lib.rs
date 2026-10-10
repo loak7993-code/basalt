@@ -11,6 +11,7 @@
 //! assembles the full JVM and game argument plan. The Android host calls into
 //! this crate over JNI; the desktop test suite runs the same code natively.
 
+pub mod download;
 pub mod exec;
 pub mod ffi;
 pub mod manifest;

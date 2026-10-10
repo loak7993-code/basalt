@@ -19,7 +19,9 @@
 package com.movtery.zalithlauncher.game.version.download
 
 import com.movtery.zalithlauncher.coroutine.Task
+import com.movtery.zalithlauncher.engine.RustDownloader
 import com.movtery.zalithlauncher.game.download.engine.BatchDownloader
+import com.movtery.zalithlauncher.game.download.engine.DownloadRequest
 import com.movtery.zalithlauncher.game.download.engine.BatchProgress
 import com.movtery.zalithlauncher.utils.logging.Logger
 import kotlinx.coroutines.CancellationException
@@ -73,6 +75,21 @@ suspend fun Task.runBatchDownloads(
         batch.stats.addBytes(reusable.sumOf { maxOf(it.size, 0L) })
         //随后重置测速基线，避免一次性并入的字节被当作瞬时速率报出
         batch.stats.resetSpeedBaseline()
+    }
+
+    if (RustDownloader.available) {
+        runBatchDownloadsRust(
+            pending = pending,
+            reusableBytes = reusable.sumOf { maxOf(it.size, 0L) },
+            maxConnections = maxConnections,
+            onSnapshot = onSnapshot,
+            acceptFailure = acceptFailure,
+            onFileSuccess = { request -> (request.tag as? DownloadTask)?.runFileDownloadedTask() },
+            updateProgress = { value -> updateProgress(value) }
+        )
+        updateProgress(1f)
+        clearSpeed()
+        return
     }
 
     batch.onUpdate = { snapshot ->
@@ -132,3 +149,86 @@ private fun progressFor(snapshot: BatchProgress, sizesFullyKnown: Boolean, hasFi
     else -> -1f
 }
 
+
+
+/**
+ * The Rust download engine path: shared keep-alive agent, bounded workers,
+ * 60s timeouts, 3-attempt retries, SHA1 verification, byte progress.
+ * Reusable bytes are folded into the emitted snapshots so progress starts
+ * from the already-present portion.
+ */
+private suspend fun Task.runBatchDownloadsRust(
+    pending: List<DownloadTask>,
+    reusableBytes: Long,
+    maxConnections: Int,
+    onSnapshot: suspend (BatchProgress) -> Unit,
+    acceptFailure: ((task: DownloadTask, error: Throwable) -> Boolean)?,
+    onFileSuccess: suspend (DownloadRequest) -> Unit,
+    updateProgress: (Float) -> Unit
+) {
+    val jobId = RustDownloader.start(
+        requests = pending.map { it.toRequest() },
+        workers = maxConnections
+    )
+
+    var lastBytes = 0L
+    var lastElapsed = 0L
+    var startedAt = System.currentTimeMillis()
+    var lastSnapshot: BatchProgress? = null
+
+    while (true) {
+        val snapshot = RustDownloader.progress(jobId) ?: break
+        val elapsed = System.currentTimeMillis() - startedAt
+        val speed = if (elapsed > lastElapsed + 100) {
+            val delta = (snapshot.bytesDone + reusableBytes) - lastBytes
+            delta * 1000 / (elapsed - lastElapsed).coerceAtLeast(1)
+        } else {
+            lastSnapshot?.speedBytesPerSec ?: 0L
+        }
+        if (elapsed > lastElapsed + 100) {
+            lastBytes = snapshot.bytesDone + reusableBytes
+            lastElapsed = elapsed
+        }
+
+        val combined = BatchProgress(
+            downloadedBytes = snapshot.bytesDone + reusableBytes,
+            totalBytes = snapshot.bytesTotal + reusableBytes,
+            downloadedFiles = snapshot.done,
+            totalFiles = snapshot.total,
+            speedBytesPerSec = speed
+        )
+        updateProgress(
+            if (combined.totalBytes > 0) {
+                (combined.downloadedBytes.toFloat() / combined.totalBytes).coerceIn(0f, 1f)
+            } else 0f
+        )
+        onSnapshot(combined)
+        lastSnapshot = combined
+
+        if (snapshot.finished) break
+        kotlinx.coroutines.delay(100)
+    }
+
+    val failures = RustDownloader.wait(jobId)
+    val judgedFailures = failures.mapNotNull { (path, error) ->
+        val task = pending.find { it.targetFile.absolutePath == path }
+        val throwable = DownloadFailedException(error)
+        if (task != null && acceptFailure?.invoke(task, throwable) == true) {
+            onFileSuccess(
+                DownloadRequest(
+                    urls = task.urls,
+                    targetFile = task.targetFile,
+                    sha1 = task.sha1,
+                    expectedSize = task.size,
+                    tag = task
+                )
+            )
+            null
+        } else {
+            path
+        }
+    }
+    if (judgedFailures.isNotEmpty()) {
+        throw DownloadFailedException("Failed downloads:\n${judgedFailures.joinToString("\n")}")
+    }
+}

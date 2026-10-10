@@ -8,6 +8,7 @@ use jni::objects::{JClass, JString};
 use jni::sys::jint;
 use jni::JNIEnv;
 
+use crate::download::ProgressSnapshot;
 use crate::manifest::{Platform, VersionManifest};
 use crate::plan::{AuthContext, EngineOptions, InstallLayout, PlanBuilder};
 
@@ -135,3 +136,50 @@ pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeD
 ) -> jint {
     crate::policy::default_ram_allocation(device_ram_mb as f64, is_32_bit != 0) as jint
 }
+
+/// Starts a download job. tasks_json: array of
+/// {urls:[...], target:"...", sha1:..., size:n}. Returns the job id.
+#[no_mangle]
+pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDownloadStart<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    tasks_json: JString<'local>,
+    workers: jint,
+) -> JString<'local> {
+    let value = (|| -> Result<String, String> {
+        let input = to_string(&mut env, &tasks_json)?;
+        let specs: Vec<crate::download::DownloadSpec> =
+            serde_json::from_str(&input).map_err(|e| e.to_string())?;
+        let id = crate::download::download_start(specs, workers.max(1) as usize);
+        Ok(id.to_string())
+    })();
+    out(&env, value)
+}
+
+/// Progress snapshot for a job: {done,total,bytesDone,bytesTotal,finished}.
+#[no_mangle]
+pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDownloadProgress<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    job_id: jint,
+) -> JString<'local> {
+    let snap = crate::download::download_progress(job_id as u32)
+        .unwrap_or(ProgressSnapshot::default());
+    out(&env, Ok(serde_json::to_string(&snap).unwrap_or_default()))
+}
+
+/// Blocks until the job finishes; returns {failures:[{path,error}]}.
+#[no_mangle]
+pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDownloadWait<'local>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    job_id: jint,
+) -> JString<'local> {
+    let value = (|| -> Result<String, String> {
+        let failures = crate::download::download_wait(job_id as u32)
+            .ok_or_else(|| "unknown job".to_string())?;
+        serde_json::to_string(&failures).map_err(|e| e.to_string())
+    })();
+    out(&env, value)
+}
+
