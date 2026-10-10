@@ -19,6 +19,7 @@
 package com.movtery.zalithlauncher.game.download.assets.platform
 
 import android.util.Log
+import com.movtery.zalithlauncher.BuildKeys
 import com.movtery.zalithlauncher.game.addons.mirror.MirrorPriority
 import com.movtery.zalithlauncher.game.addons.mirror.resolveMirrorPriority
 import com.movtery.zalithlauncher.game.download.assets.mapExceptionToMessage
@@ -108,17 +109,27 @@ suspend fun <E: AbstractPlatformSearcher, T> mirroredPlatformSearcher(
 
 /**
  * 镜像源只能在中国地区使用
+ *
+ * 例外：官方 CurseForge API 对没有 `x-api-key` 的请求一律返回 403
+ * （"API Key missing or invalid"）。未配置密钥的构建没有可用的官方源，
+ * 此时以无需密钥的镜像源优先；配置了密钥则仍以官方源为准。
  */
 fun mirroredCurseForgeSource(
     enabledMirror: Boolean = isChinaMainland()
 ): List<CurseForgeSearcher> {
     val source = resolveMirrorPriority(AllSettings.assetPlatformSource.getValue(), mainland = enabledMirror)
-    val mirrorSource = mirrorCurseForgeSearcher.takeIf { enabledMirror }
-    return when (source) {
-        MirrorPriority.OFFICIAL -> listOf(curseForgeSearcher)
-        MirrorPriority.MIRROR_FIRST ->
-            listOfNotNull(mirrorSource, curseForgeSearcher)
+    val keyConfigured = BuildKeys.CURSEFORGE_API.isNotBlank()
+    if (!keyConfigured) {
+        Logger.warning(
+            TAG, "No CurseForge API key configured; api.curseforge.com answers 403. Trying the mirror source first."
+        )
     }
+    val mirrorFirst = !keyConfigured || source == MirrorPriority.MIRROR_FIRST
+    if (!mirrorFirst) return listOf(curseForgeSearcher)
+
+    val mirror = mirrorCurseForgeSearcher.takeIf { enabledMirror || !keyConfigured }
+        ?: return listOf(curseForgeSearcher)
+    return listOf(mirror, curseForgeSearcher)
 }
 
 /**
