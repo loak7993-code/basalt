@@ -80,3 +80,80 @@ body {
 .cursor-blink {
   animation: blink 1.2s step-end infinite;
 }
+
+/* ── terminal extras ─────────────────────────────────────────── */
+.terminal-shell {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.02),
+    0 18px 50px -20px rgba(0, 0, 0, 0.9),
+    0 0 90px -40px rgba(52, 211, 153, 0.25);
+}
+.terminal-body {
+  scrollbar-width: none;
+}
+.terminal-body::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── pointer spotlight in the hero ───────────────────────────── */
+.spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 400ms cubic-bezier(0.16, 1, 0.3, 1);
+  background: radial-gradient(
+    420px circle at var(--spot-x, 50%) var(--spot-y, 50%),
+    rgba(52, 211, 153, 0.07),
+    transparent 65%
+  );
+}
+.hero-with-spot:hover .spotlight {
+  opacity: 1;
+}
+
+/* ── tech marquee ────────────────────────────────────────────── */
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll 42s linear infinite;
+}
+.marquee-mask {
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+/* ── card motion ─────────────────────────────────────────────── */
+.lift {
+  transition:
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 40px -24px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(52, 211, 153, 0.12);
+}
+.shot-frame {
+  transition:
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.shot-frame:hover {
+  transform: translateY(-4px) scale(1.008);
+  box-shadow: 0 24px 60px -28px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(52, 211, 153, 0.14);
+}
+
+/* the mark breathes */
+@keyframes mark-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+  50% { box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.10); }
+}
+.mark-breathe {
+  animation: mark-breathe 4.5s ease-in-out infinite;
+  border-radius: 8px;
+}

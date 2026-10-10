@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
+import { useTerminalTranscript } from "./useTerminal";
 import {
   IconCheck,
   IconCpu,
@@ -45,66 +46,61 @@ function Reveal({
   );
 }
 
-/* Animated terminal: cycles through real CLI output */
-const TERMINAL_LINES = [
-  { text: "$ basalt install 26.3", color: "text-zinc-500" },
-  { text: "downloading 5199 files ...", color: "text-zinc-600" },
-  { text: "  5199/5199 · 559.9 MB", color: "text-zinc-500" },
-  { text: "installed: versions/26.3", color: "text-accent" },
-  { text: "", color: "" },
-  { text: "$ basalt account steve", color: "text-zinc-500" },
-  { text: "account stored: steve", color: "text-accent" },
-  { text: "", color: "" },
-  { text: "$ basalt play 26.3", color: "text-zinc-500" },
-  { text: "java: /usr/bin/java (major 25)", color: "text-zinc-600" },
-  { text: "launching 26.3 with steve (1637M heap, 25 args)", color: "text-accent" },
-];
-
+/* A terminal that behaves like one: typing, output, a live progress bar. */
 function Terminal() {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-40px" });
-  const [visibleLines, setVisibleLines] = useState(0);
+  const { lines, typingLine, progress } = useTerminalTranscript();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Keep the newest line in view as the transcript grows.
   useEffect(() => {
-    if (!inView) return;
-    let i = 0;
-    const timer = setInterval(() => {
-      i++;
-      setVisibleLines(i);
-      if (i >= TERMINAL_LINES.length) clearInterval(timer);
-    }, 350);
-    return () => clearInterval(timer);
-  }, [inView]);
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [lines.length, typingLine, progress]);
+
+  const toneClass = (tone?: string) =>
+    tone === "accent" ? "text-accent" : tone === "plain" ? "text-zinc-200" : "text-zinc-500";
 
   return (
-    <div
-      ref={ref}
-      className="rounded-xl border border-white/[0.06] bg-[#08080a] overflow-hidden"
-    >
+    <div className="relative rounded-xl border border-white/[0.06] bg-[#08080a] overflow-hidden terminal-shell">
       <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/[0.06]">
-        <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-        <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-        <div className="w-2.5 h-2.5 rounded-full bg-zinc-700" />
-        <span className="ml-2 font-mono text-[11px] text-zinc-600">basalt — zsh</span>
+        <div className="w-2.5 h-2.5 rounded-full bg-[#3a3a3c]" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#3a3a3c]" />
+        <div className="w-2.5 h-2.5 rounded-full bg-[#3a3a3c]" />
+        <span className="ml-2 font-mono text-[11px] text-zinc-600">steve@basalt — zsh</span>
+        <span className="ml-auto font-mono text-[10px] text-zinc-700">26.3</span>
       </div>
-      <div className="p-4 font-mono text-[13px] leading-relaxed min-h-[240px]">
-        {TERMINAL_LINES.slice(0, visibleLines).map((line, i) => (
-          <div key={i} className={line.color}>
+      <div
+        ref={scrollRef}
+        className="h-[268px] overflow-hidden p-4 font-mono text-[12.5px] leading-[1.75] terminal-body"
+      >
+        {lines.map((line, i) => (
+          <div key={i} className={toneClass(line.tone)}>
             {line.text || "\u00A0"}
           </div>
         ))}
-        {visibleLines < TERMINAL_LINES.length && (
-          <div className="text-zinc-600">
-            <span className="cursor-blink">▊</span>
+        {typingLine && (
+          <div className="text-zinc-200">
+            <span className="text-accent">{typingLine.slice(0, 2)}</span>
+            {typingLine.slice(2)}
+            <span className="cursor-blink text-accent">▊</span>
           </div>
         )}
-        {visibleLines >= TERMINAL_LINES.length && (
+        {progress && (
+          <div className="text-zinc-500">
+            <span className="text-accent">{progress.filled}</span>
+            <span className="text-zinc-600">{progress.tail}</span>
+            {"  "}
+            {progress.label}
+          </div>
+        )}
+        {!typingLine && !progress && (
           <div className="text-zinc-600">
-            <span className="text-zinc-500">$</span>{" "}
-            <span className="cursor-blink">▊</span>
+            <span className="text-accent">❯</span> <span className="cursor-blink">▊</span>
           </div>
         )}
       </div>
+      {/* soft scanline glow at the bottom */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#08080a] to-transparent" />
     </div>
   );
 }
@@ -168,7 +164,7 @@ function App() {
       <header className="fixed top-0 left-0 right-0 z-40 border-b border-white/[0.04] backdrop-blur-xl bg-[#050505]/70">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-5">
           <a href="#top" className="flex items-center gap-2.5">
-            <Mark size={24} />
+            <span className="mark-breathe inline-flex"><Mark size={24} /></span>
             <span className="text-sm font-semibold tracking-tight">Basalt</span>
           </a>
           <nav className="flex items-center gap-1 text-[13px] text-zinc-500">
@@ -193,8 +189,17 @@ function App() {
 
       <main id="top" className="relative z-10">
         {/* ─── Hero ─── */}
-        <section className="mx-auto max-w-5xl px-5 pt-32 pb-16 md:pt-44 md:pb-24">
-          <div className="grid items-center gap-12 lg:grid-cols-[1fr_1fr]">
+        <section
+          className="hero-with-spot relative mx-auto max-w-5xl px-5 pt-32 pb-16 md:pt-44 md:pb-24"
+          onPointerMove={(e) => {
+            const target = e.currentTarget;
+            const rect = target.getBoundingClientRect();
+            target.style.setProperty("--spot-x", `${e.clientX - rect.left}px`);
+            target.style.setProperty("--spot-y", `${e.clientY - rect.top}px`);
+          }}
+        >
+          <div className="spotlight" aria-hidden="true" />
+          <div className="relative grid items-center gap-12 lg:grid-cols-[1fr_1fr]">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -258,6 +263,42 @@ function App() {
           </Reveal>
         </section>
 
+        {/* ─── Tech marquee ─── */}
+        <section className="relative py-6 border-y border-white/[0.04] bg-black/20">
+          <div className="marquee-mask overflow-hidden">
+            <div className="marquee-track gap-10 px-5">
+              {[0, 1].map((copy) => (
+                <div key={copy} className="flex shrink-0 items-center gap-10" aria-hidden={copy === 1}>
+                  {[
+                    "MC 26.3",
+                    "Java 25",
+                    "gl4es",
+                    "ANGLE",
+                    "Zink",
+                    "VirGL",
+                    "Fabric",
+                    "Forge",
+                    "NeoForge",
+                    "OptiFine",
+                    "Terracotta",
+                    "authlib-injector",
+                    "SHA1 verified",
+                    "GPL-3",
+                  ].map((chip) => (
+                    <span
+                      key={chip}
+                      className="flex items-center gap-3 font-mono text-[11px] tracking-wide text-zinc-600"
+                    >
+                      <span className="w-1 h-1 rounded-full bg-accent/40" />
+                      {chip}
+                    </span>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
         {/* ─── Features: bento ─── */}
         <section id="features" className="mx-auto max-w-5xl px-5 py-16 md:py-28">
           <Reveal>
@@ -273,7 +314,7 @@ function App() {
           {/* Row 1: two wide cards */}
           <div className="mt-10 grid gap-4 md:grid-cols-2">
             <Reveal className="h-full">
-              <div className="group h-full rounded-xl bg-panel p-7 transition-colors hover:bg-panel-2">
+              <div className="lift group h-full rounded-xl bg-panel p-7 hover:bg-panel-2">
                 <div className="flex items-start justify-between">
                   <IconTerminal size={22} className="text-accent/60" />
                   <span className="font-mono text-[10px] text-zinc-600">engine-rs</span>
@@ -294,7 +335,7 @@ function App() {
               </div>
             </Reveal>
             <Reveal delay={0.06} className="h-full">
-              <div className="group h-full rounded-xl bg-panel p-7 transition-colors hover:bg-panel-2">
+              <div className="lift group h-full rounded-xl bg-panel p-7 hover:bg-panel-2">
                 <div className="flex items-start justify-between">
                   <IconUsers size={22} className="text-accent/60" />
                   <span className="font-mono text-[10px] text-zinc-600">no account wall</span>
@@ -333,7 +374,7 @@ function App() {
               },
             ].map((feature, index) => (
               <Reveal key={feature.title} delay={index * 0.06} className="h-full">
-                <div className="h-full rounded-xl bg-panel p-6 transition-colors hover:bg-panel-2">
+                <div className="lift h-full rounded-xl bg-panel p-6 hover:bg-panel-2">
                   <feature.icon size={20} className="text-accent/60" />
                   <h3 className="mt-4 text-sm font-medium">{feature.title}</h3>
                   <p className="mt-2 text-[13px] leading-relaxed text-zinc-400">
@@ -356,25 +397,42 @@ function App() {
               theme is the theme.
             </p>
           </Reveal>
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            {SHOTS.map((shot, index) => (
-              <Reveal key={shot.src} delay={index * 0.06}>
-                <figure className="overflow-hidden rounded-xl border border-white/[0.04] bg-panel">
-                  <img
-                    src={shot.src}
-                    alt={shot.alt}
-                    loading="lazy"
-                    className="w-full aspect-[2400/1080] object-cover"
-                  />
-                  <figcaption className="flex items-center justify-between border-t border-white/[0.04] px-4 py-3">
-                    <span className="text-sm text-zinc-300">{shot.label}</span>
-                    <span className="font-mono text-[10px] text-zinc-600">
-                      Android 15 · 2400×1080
-                    </span>
-                  </figcaption>
-                </figure>
-              </Reveal>
-            ))}
+          <div className="mt-10 grid gap-4">
+            {/* Lead frame: full width, the home screen with 26.3 installed */}
+            <Reveal>
+              <figure className="shot-frame overflow-hidden rounded-xl border border-white/[0.05] bg-panel">
+                <img
+                  src={SHOTS[0].src}
+                  alt={SHOTS[0].alt}
+                  loading="eager"
+                  className="w-full aspect-[2400/1080] object-cover"
+                />
+                <figcaption className="flex items-center justify-between border-t border-white/[0.04] px-5 py-3.5">
+                  <span className="text-sm text-zinc-200">{SHOTS[0].label}</span>
+                  <span className="font-mono text-[10px] text-zinc-600">
+                    Android 15 · 2400×1080 · offline account
+                  </span>
+                </figcaption>
+              </figure>
+            </Reveal>
+            <div className="grid gap-4 md:grid-cols-3">
+              {SHOTS.slice(1).map((shot, index) => (
+                <Reveal key={shot.src} delay={0.06 + index * 0.06}>
+                  <figure className="shot-frame overflow-hidden rounded-xl border border-white/[0.05] bg-panel">
+                    <img
+                      src={shot.src}
+                      alt={shot.alt}
+                      loading="lazy"
+                      className="w-full aspect-[2400/1080] object-cover"
+                    />
+                    <figcaption className="flex items-center justify-between border-t border-white/[0.04] px-4 py-3">
+                      <span className="text-[13px] text-zinc-300">{shot.label}</span>
+                      <span className="font-mono text-[10px] text-zinc-600">26.3</span>
+                    </figcaption>
+                  </figure>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </section>
 
