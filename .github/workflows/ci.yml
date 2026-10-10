@@ -30,8 +30,9 @@ jobs:
           cargo clippy --release -- -D warnings
       - name: CLI smoke test
         run: |
-          ./cli/target/release/basalt --help
-          ./cli/target/release/basalt paths
+          # engine-rs and cli share the workspace target dir at the repo root
+          ./target/release/basalt --help
+          ./target/release/basalt paths
 
   site:
     name: Product site

@@ -23,7 +23,7 @@ play and offline-mode servers.
 |---|---|---|
 | Android (arm64) | `Basalt-2.0.0-arm64-v8a.apk` | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
 | Android (any ABI) | `Basalt-2.0.0-universal.apk` | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
-| Linux x86_64 | `Basalt-2.0.0-x86_64.AppImage` (6.6 MB) | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
+| Linux x86_64 | `Basalt-2.0.0-x86_64.AppImage` (6.4 MB) | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
 
 Binaries ship as release assets, not as commits.
 
