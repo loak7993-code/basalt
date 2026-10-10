@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
-import { useTerminalTranscript } from "./useTerminal";
 import {
   IconCheck,
   IconCpu,
@@ -17,9 +16,9 @@ function Mark({ size = 28 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 108 108" aria-hidden="true">
       <rect width="108" height="108" rx="22" fill="#0A0A0C" />
-      <path d="M36,58 46,54 46,72 36,72 Z M34,74.5 74,74.5 74,76.5 34,76.5 Z" fill="#2EA982" />
-      <path d="M48,44 58,40 58,72 48,72 Z" fill="#4ADE9C" />
-      <path d="M60,56 70,52 70,72 60,72 Z" fill="#2EA982" />
+      <path d="M36,58 46,54 46,72 36,72 Z M34,74.5 74,74.5 74,76.5 34,76.5 Z" fill="#2E6FC7" />
+      <path d="M48,44 58,40 58,72 48,72 Z" fill="#4D9EFF" />
+      <path d="M60,56 70,52 70,72 60,72 Z" fill="#2E6FC7" />
     </svg>
   );
 }
@@ -43,65 +42,6 @@ function Reveal({
     >
       {children}
     </motion.div>
-  );
-}
-
-/* A terminal that behaves like one: typing, output, a live progress bar. */
-function Terminal() {
-  const { lines, typingLine, progress } = useTerminalTranscript();
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Keep the newest line in view as the transcript grows.
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [lines.length, typingLine, progress]);
-
-  const toneClass = (tone?: string) =>
-    tone === "accent" ? "text-accent" : tone === "plain" ? "text-zinc-200" : "text-zinc-500";
-
-  return (
-    <div className="relative rounded-xl border border-white/[0.06] bg-[#08080a] overflow-hidden terminal-shell">
-      <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-white/[0.06]">
-        <div className="w-2.5 h-2.5 rounded-full bg-[#3a3a3c]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#3a3a3c]" />
-        <div className="w-2.5 h-2.5 rounded-full bg-[#3a3a3c]" />
-        <span className="ml-2 font-mono text-[11px] text-zinc-600">steve@basalt — zsh</span>
-        <span className="ml-auto font-mono text-[10px] text-zinc-700">26.3</span>
-      </div>
-      <div
-        ref={scrollRef}
-        className="h-[268px] overflow-hidden p-4 font-mono text-[12.5px] leading-[1.75] terminal-body"
-      >
-        {lines.map((line, i) => (
-          <div key={i} className={toneClass(line.tone)}>
-            {line.text || "\u00A0"}
-          </div>
-        ))}
-        {typingLine && (
-          <div className="text-zinc-200">
-            <span className="text-accent">{typingLine.slice(0, 2)}</span>
-            {typingLine.slice(2)}
-            <span className="cursor-blink text-accent">▊</span>
-          </div>
-        )}
-        {progress && (
-          <div className="text-zinc-500">
-            <span className="text-accent">{progress.filled}</span>
-            <span className="text-zinc-600">{progress.tail}</span>
-            {"  "}
-            {progress.label}
-          </div>
-        )}
-        {!typingLine && !progress && (
-          <div className="text-zinc-600">
-            <span className="text-accent">❯</span> <span className="cursor-blink">▊</span>
-          </div>
-        )}
-      </div>
-      {/* soft scanline glow at the bottom */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#08080a] to-transparent" />
-    </div>
   );
 }
 
@@ -190,7 +130,7 @@ function App() {
       <main id="top" className="relative z-10">
         {/* ─── Hero ─── */}
         <section
-          className="hero-with-spot relative mx-auto max-w-5xl px-5 pt-32 pb-16 md:pt-44 md:pb-24"
+          className="hero-with-spot relative isolate overflow-hidden"
           onPointerMove={(e) => {
             const target = e.currentTarget;
             const rect = target.getBoundingClientRect();
@@ -198,48 +138,53 @@ function App() {
             target.style.setProperty("--spot-y", `${e.clientY - rect.top}px`);
           }}
         >
+          {/* The app itself, behind the text. The image is masked to the right
+              half so the headline always sits on clean canvas. */}
+          <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+            <img
+              src="/shots/download-263.png"
+              alt=""
+              className="hero-shot h-full w-full object-cover object-[68%_18%]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-canvas via-transparent to-canvas/70" />
+          </div>
           <div className="spotlight" aria-hidden="true" />
-          <div className="relative grid items-center gap-12 lg:grid-cols-[1fr_1fr]">
+
+          <div className="relative z-10">
+          <div className="mx-auto flex min-h-[520px] max-w-5xl items-center px-5 pt-28 pb-16 md:min-h-[600px] md:pt-32">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: EASE }}
+              className="max-w-xl"
             >
-              <p className="font-mono text-[11px] tracking-[0.2em] text-accent/70 uppercase">
+              <p className="font-mono text-[11px] tracking-[0.2em] text-accent/80 uppercase">
                 GPL-3 · Rust engine · Offline first
               </p>
-              <h1 className="mt-5 text-[2.5rem] font-semibold leading-[1.02] tracking-[-0.03em] md:text-[3.6rem]">
+              <h1 className="mt-5 text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.03em] md:text-[3.8rem]">
                 Minecraft Java Edition,
                 <br />
-                <span className="text-zinc-500">launched by Rust.</span>
+                <span className="text-zinc-400">launched by Rust.</span>
               </h1>
-              <p className="mt-6 max-w-md text-[15px] leading-relaxed text-zinc-400">
+              <p className="mt-6 max-w-md text-[15px] leading-relaxed text-zinc-300/90 md:text-base">
                 Basalt installs the game from Mojang's own servers and launches
                 it on Android and Linux. No account wall for offline play.
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
                 <a
                   href="#download"
-                  className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition-all active:scale-[0.98] hover:bg-emerald-300"
+                  className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition-all active:scale-[0.98] hover:brightness-110"
                 >
                   <IconDownload size={16} />
                   Download
                 </a>
                 <a
                   href="#features"
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-5 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:text-white hover:border-white/20"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/[0.1] bg-black/30 px-5 py-2.5 text-sm font-medium text-zinc-200 backdrop-blur-sm transition-colors hover:text-white hover:border-white/25"
                 >
                   How it works
                 </a>
               </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.55, delay: 0.15, ease: EASE }}
-            >
-              <Terminal />
             </motion.div>
           </div>
 
@@ -261,6 +206,7 @@ function App() {
               ))}
             </div>
           </Reveal>
+          </div>
         </section>
 
         {/* ─── Tech marquee ─── */}
@@ -455,7 +401,7 @@ function App() {
                 <div className="mt-6 flex flex-wrap gap-3">
                   <a
                     href="/dl/Basalt-2.0.0-universal.apk"
-                    className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition-all active:scale-[0.98] hover:bg-emerald-300"
+                    className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition-all active:scale-[0.98] hover:brightness-110"
                   >
                     Get the APK
                   </a>
@@ -482,7 +428,7 @@ function App() {
                 <div className="mt-6">
                   <a
                     href="/dl/Basalt-2.0.0-x86_64.AppImage"
-                    className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition-all active:scale-[0.98] hover:bg-emerald-300"
+                    className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition-all active:scale-[0.98] hover:brightness-110"
                   >
                     Get the AppImage
                   </a>
