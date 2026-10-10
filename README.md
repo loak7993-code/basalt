@@ -17,6 +17,16 @@ Mojang's own public endpoints. Playing multiplayer on online-mode servers
 requires a legitimate Minecraft account; offline accounts exist for offline
 play and offline-mode servers.
 
+## Downloads
+
+| Platform | Build | Where |
+|---|---|---|
+| Android (arm64) | `Basalt-2.0.0-arm64-v8a.apk` | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
+| Android (any ABI) | `Basalt-2.0.0-universal.apk` | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
+| Linux x86_64 | `Basalt-2.0.0-x86_64.AppImage` (6.6 MB) | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
+
+Binaries ship as release assets, not as commits.
+
 ## Features
 
 - Java Edition from 1.7 up to the current drop, MC 26.3 included (Java 25 runtime bundled)
@@ -44,8 +54,8 @@ Real captures from the verification run on an Android 15 emulator (2400x1080):
 Build:
 
 ```bash
-git clone https://github.com/Leonxlnx/Basalt.git
-cd Basalt
+git clone https://github.com/loak7993-code/basalt.git
+cd basalt
 ./gradlew :ZalithLauncher:assembleDebug
 ```
 
@@ -69,11 +79,11 @@ No build-time configuration is required. Optional properties live in
 | `launcher_name` | App label + data-dir identity | `Basalt` |
 | `launcher_app_name` | Full display name | `Basalt` |
 | `launcher_short_name` | Short name used in user agents | `Basalt` |
-| `url_home` | Fork home page (update/about links) | `https://github.com/Leonxlnx/Basalt` |
-| `launcher_version_code` | Android versionCode | `10000` |
-| `launcher_version_name` | Android versionName | `1.0.0` |
-| `basalt_store_password` | Release keystore password | `basalt-2026-release` |
-| `basalt_key_password` | Release key password | `basalt-2026-release` |
+| `url_home` | Fork home page (update/about links) | `https://github.com/loak7993-code/basalt` |
+| `launcher_version_code` | Android versionCode | `20000` |
+| `launcher_version_name` | Android versionName | `2.0.0` |
+| `basalt_store_password` | Release keystore password (unset in git) | from env `STORE_PASSWORD` or `.store_password.txt` |
+| `basalt_key_password` | Release key password (unset in git) | from env `KEY_PASSWORD` or `.key_password.txt` |
 | `oauth_client_id` | Microsoft OAuth client id for MS login | unset (offline login needs none) |
 | `curseforge_api_key` | CurseForge API key for mod downloads | unset |
 
@@ -140,3 +150,17 @@ Basalt/
 - Upstream seasonal festival effects are off by default.
 - Modloader installers for versions newer than 26.3 depend on the upstream
   modloader metadata sources catching up.
+- The release keystore is not in this repository. `assembleRelease` needs your
+  own `ZalithLauncher/basalt.jks` plus `STORE_PASSWORD` / `KEY_PASSWORD` in the
+  environment (or the untracked `.store_password.txt` / `.key_password.txt`).
+  Debug builds sign with the committed public debug key and need nothing.
+
+## License
+
+GPL-3.0-or-later, inherited from [ZalithLauncher 2](https://github.com/ZalithLauncher/ZalithLauncher2)
+by MovTery and contributors. Full text in [LICENSE](LICENSE).
+
+Engine boundary: the launch engine (`engine-rs/`, `cli/`) is first-party work in
+this repository. The Android runtime core (bionic JRE builds, patched LWJGL,
+GL renderers, input bridge) is upstream GPL code, kept with its lineage intact.
+See [PROVENANCE.md](PROVENANCE.md) for the line between the two.
