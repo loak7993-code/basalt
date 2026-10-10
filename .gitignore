@@ -37,3 +37,16 @@ website/dist/
 website/public/dl/
 packaging/appimage/Basalt.AppDir/usr/
 packaging/appimage/*.AppImage
+
+# Basalt: build output, binaries, and secrets that must never be committed
+target/
+engine-rs/target/
+cli/target/
+*.jks
+*.keystore
+*.apk
+*.aab
+packaging/appimage/*.AppImage
+website/public/dl/
+website/share/*.log
+website/share/*.txt
