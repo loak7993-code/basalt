@@ -1,16 +1,26 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useInView } from "motion/react";
 import {
   IconCheck,
+  IconCopy,
   IconCpu,
   IconDownload,
+  IconGithub,
   IconGlobe,
   IconLightning,
   IconTerminal,
   IconUsers,
+  IconX,
 } from "./components/icons";
 
 const EASE = [0.16, 1, 0.3, 1] as const;
+
+const REPO = "https://github.com/loak7993-code/basalt";
+const RELEASES = `${REPO}/releases`;
+const APPIMAGE_SHA256 =
+  "3f09bb47d074aa90f583d51effa8bddb01e62dc58b8bcd2b581ee295e13ec0c2";
+const LINUX_RUN =
+  "curl -LO https://github.com/loak7993-code/basalt/releases/download/v2.0.0/Basalt-2.0.0-x86_64.AppImage && chmod +x Basalt-2.0.0-x86_64.AppImage && ./Basalt-2.0.0-x86_64.AppImage";
 
 function Mark({ size = 28 }: { size?: number }) {
   return (
@@ -75,11 +85,14 @@ function Counter({ target, suffix = "", duration = 1200 }: { target: number; suf
 
 const NAV = [
   { label: "Features", href: "#features" },
+  { label: "Benchmarks", href: "#bench" },
   { label: "Screens", href: "#screens" },
   { label: "Download", href: "#download" },
 ];
 
-const SHOTS = [
+type Shot = { src: string; alt: string; label: string };
+
+const SHOTS: Shot[] = [
   { src: "/shots/home-263.png", alt: "Home screen with 26.3 installed and an offline account", label: "Home" },
   { src: "/shots/download-263.png", alt: "Download list with 26.3 at the top of releases", label: "Downloads" },
   { src: "/shots/offline-account.png", alt: "Offline account created and selected", label: "Accounts" },
@@ -95,9 +108,178 @@ const CHECKS = [
   "Terracotta multiplayer rooms",
 ];
 
+/* Install timings measured on the verification machine, fresh 26.3 installs
+   run back to back. Both numbers per row come from the same session. */
+const BENCH_MAX = 120;
+const BENCH = [
+  {
+    title: "Android, x86_64 emulator",
+    rows: [
+      { label: "Kotlin download engine", seconds: 120, accent: false },
+      { label: "Rust download engine", seconds: 37, accent: true },
+    ],
+    note: "5,199 files, SHA1 verified, same emulator, same manifest.",
+  },
+  {
+    title: "Linux, same machine",
+    rows: [
+      { label: "Previous installer", seconds: 30, accent: false },
+      { label: "Rust installer", seconds: 13, accent: true },
+    ],
+    note: "The previous installer also hung past 20 minutes on one run. The Rust one holds a 60s per-file timeout and three attempts.",
+  },
+];
+
+/* One command, copyable. Clipboard access can be refused (insecure context,
+   permission denied), so the failure path says so instead of silently doing
+   nothing. */
+function CopyChip({ command }: { command: string }) {
+  const [state, setState] = useState<"idle" | "copied" | "blocked">("idle");
+
+  useEffect(() => {
+    if (state === "idle") return;
+    const t = window.setTimeout(() => setState("idle"), 2200);
+    return () => window.clearTimeout(t);
+  }, [state]);
+
+  const copy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(command);
+      setState("copied");
+    } catch {
+      setState("blocked");
+    }
+  }, [command]);
+
+  return (
+    <div className="mt-6 flex max-w-xl items-center gap-3 rounded-xl border border-white/[0.07] bg-black/40 px-4 py-3 backdrop-blur-sm">
+      <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-zinc-400">
+        {command}
+      </code>
+      <button
+        type="button"
+        onClick={copy}
+        aria-label="Copy the Linux install command"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-white/[0.1] px-2.5 py-1.5 text-[12px] text-zinc-300 transition-colors hover:border-white/25 hover:text-white active:scale-[0.98]"
+      >
+        {state === "copied" ? (
+          <>
+            <IconCheck size={14} className="text-accent" />
+            Copied
+          </>
+        ) : state === "blocked" ? (
+          "Select it and copy"
+        ) : (
+          <>
+            <IconCopy size={14} />
+            Copy
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
+
+/* Install timing bars. Width is a static value, the animation is scaleX so
+   nothing triggers layout. */
+function BenchBar({
+  label,
+  seconds,
+  accent,
+}: {
+  label: string;
+  seconds: number;
+  accent: boolean;
+}) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[13px] text-zinc-400">{label}</span>
+        <span className="font-mono text-[12px] text-zinc-300">{seconds}s</span>
+      </div>
+      <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-white/[0.04]">
+        <motion.div
+          className={`h-full rounded-full ${accent ? "bg-accent" : "bg-zinc-600"}`}
+          style={{
+            width: `${(seconds / BENCH_MAX) * 100}%`,
+            transformOrigin: "left center",
+          }}
+          initial={{ scaleX: 0 }}
+          whileInView={{ scaleX: 1 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.75, ease: EASE }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function Lightbox({ shot, onClose }: { shot: Shot; onClose: () => void }) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  return (
+    <motion.div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`${shot.label} screenshot`}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      onClick={onClose}
+    >
+      <motion.figure
+        className="w-full max-w-5xl overflow-hidden rounded-xl border border-white/10 bg-panel"
+        initial={{ scale: 0.97, y: 12 }}
+        animate={{ scale: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: EASE }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <img src={shot.src} alt={shot.alt} className="w-full" />
+        <figcaption className="flex items-center justify-between border-t border-white/[0.04] px-5 py-3.5">
+          <span className="text-sm text-zinc-200">{shot.label}</span>
+          <span className="font-mono text-[10px] text-zinc-600">
+            Android 15 · 2400×1080
+          </span>
+        </figcaption>
+      </motion.figure>
+      <button
+        ref={closeRef}
+        type="button"
+        onClick={onClose}
+        aria-label="Close screenshot"
+        className="absolute right-5 top-5 inline-flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-black/60 text-zinc-300 transition-colors hover:text-white"
+      >
+        <IconX size={20} />
+      </button>
+    </motion.div>
+  );
+}
+
 function App() {
+  const [openShot, setOpenShot] = useState<Shot | null>(null);
+
   return (
     <div className="relative min-h-screen bg-canvas text-zinc-100">
+      <a
+        href="#download"
+        className="skip-link absolute left-4 top-3 z-50 -translate-y-20 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-black transition-transform focus:translate-y-0"
+      >
+        Skip to downloads
+      </a>
       <div className="glow-haze" />
 
       {/* Nav */}
@@ -118,9 +300,12 @@ function App() {
               </a>
             ))}
             <a
-              href="https://github.com/Leonxlnx/Basalt"
-              className="ml-2 rounded-lg border border-white/[0.08] px-3 py-1.5 text-zinc-300 transition-colors hover:text-white hover:border-white/20"
+              href={REPO}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-2 inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-zinc-300 transition-colors hover:border-white/20 hover:text-white"
             >
+              <IconGithub size={14} />
               Source
             </a>
           </nav>
@@ -138,32 +323,32 @@ function App() {
             target.style.setProperty("--spot-y", `${e.clientY - rect.top}px`);
           }}
         >
-          {/* The app itself, behind the text. The image is masked to the right
-              half so the headline always sits on clean canvas. */}
+          {/* A crop of the real app screen, behind the text. Masked so the headline
+                always sits on clean canvas. */}
           <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
             <img
-              src="/shots/download-263.png"
+              src="/shots/hero-backdrop.png"
               alt=""
-              className="hero-shot h-full w-full object-cover object-[68%_18%]"
+              className="hero-shot h-full w-full object-cover object-[64%_center]"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-canvas via-transparent to-canvas/70" />
+            <div className="absolute inset-0 bg-gradient-to-b from-canvas via-canvas/20 to-canvas" />
           </div>
           <div className="spotlight" aria-hidden="true" />
 
           <div className="relative z-10">
-          <div className="mx-auto flex min-h-[520px] max-w-5xl items-center px-5 pt-28 pb-16 md:min-h-[600px] md:pt-32">
+          <div className="mx-auto flex min-h-[500px] max-w-5xl items-center px-5 pt-28 pb-12 md:min-h-[540px] md:pt-32">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.55, ease: EASE }}
-              className="max-w-xl"
+              className="min-w-0 max-w-xl md:max-w-2xl"
             >
               <p className="font-mono text-[11px] tracking-[0.2em] text-accent/80 uppercase">
                 GPL-3 · Rust engine · Offline first
               </p>
-              <h1 className="mt-5 text-[2.6rem] font-semibold leading-[1.02] tracking-[-0.03em] md:text-[3.8rem]">
+              <h1 className="mt-5 text-[2.15rem] font-semibold leading-[1.06] tracking-[-0.03em] md:text-[3.8rem] md:leading-[1.02]">
                 Minecraft Java Edition,
-                <br />
+                <br className="hidden md:inline" />{" "}
                 <span className="text-zinc-400">launched by Rust.</span>
               </h1>
               <p className="mt-6 max-w-md text-[15px] leading-relaxed text-zinc-300/90 md:text-base">
@@ -180,16 +365,17 @@ function App() {
                 </a>
                 <a
                   href="#features"
-                  className="inline-flex items-center gap-2 rounded-lg border border-white/[0.1] bg-black/30 px-5 py-2.5 text-sm font-medium text-zinc-200 backdrop-blur-sm transition-colors hover:text-white hover:border-white/25"
+                  className="inline-flex items-center gap-2 rounded-lg border border-white/[0.1] bg-black/30 px-5 py-2.5 text-sm font-medium text-zinc-200 backdrop-blur-sm transition-colors hover:border-white/25 hover:text-white"
                 >
                   How it works
                 </a>
               </div>
+              <CopyChip command={LINUX_RUN} />
             </motion.div>
           </div>
 
           {/* Stats bar */}
-          <Reveal delay={0.2} className="mt-16">
+          <Reveal delay={0.2} className="mt-10 md:mt-16">
             <div className="grid grid-cols-2 gap-px rounded-xl bg-white/[0.04] md:grid-cols-4 overflow-hidden">
               {[
                 { value: 26.3, label: "Current MC release", mono: true, raw: "26.3" },
@@ -332,6 +518,47 @@ function App() {
           </div>
         </section>
 
+        {/* ─── Benchmarks ─── */}
+        <section id="bench" className="mx-auto max-w-5xl px-5 py-16 md:py-28">
+          <Reveal>
+            <h2 className="text-2xl font-semibold tracking-[-0.02em] md:text-[1.75rem]">
+              Install time, measured
+            </h2>
+            <p className="mt-3 max-w-xl text-sm text-zinc-400">
+              Fresh MC 26.3 installs run back to back on the same machine, the
+              same manifest, the same 5,199 files. These are the numbers from
+              those runs, recorded in the changelog.
+            </p>
+          </Reveal>
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {BENCH.map((group, index) => (
+              <Reveal key={group.title} delay={index * 0.08} className="h-full">
+                <div className="lift flex h-full flex-col rounded-xl bg-panel p-7">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h3 className="text-[15px] font-medium">{group.title}</h3>
+                    <span className="font-mono text-[10px] tracking-wide text-zinc-600 uppercase">
+                      lower is better
+                    </span>
+                  </div>
+                  <div className="mt-6 space-y-5">
+                    {group.rows.map((row) => (
+                      <BenchBar
+                        key={row.label}
+                        label={row.label}
+                        seconds={row.seconds}
+                        accent={row.accent}
+                      />
+                    ))}
+                  </div>
+                  <p className="mt-6 text-[13px] leading-relaxed text-zinc-500">
+                    {group.note}
+                  </p>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </section>
+
         {/* ─── Screens ─── */}
         <section id="screens" className="mx-auto max-w-5xl px-5 py-16 md:py-28">
           <Reveal>
@@ -346,36 +573,44 @@ function App() {
           <div className="mt-10 grid gap-4">
             {/* Lead frame: full width, the home screen with 26.3 installed */}
             <Reveal>
-              <figure className="shot-frame overflow-hidden rounded-xl border border-white/[0.05] bg-panel">
+              <button
+                type="button"
+                onClick={() => setOpenShot(SHOTS[0])}
+                className="shot-frame block w-full overflow-hidden rounded-xl border border-white/[0.05] bg-panel text-left"
+              >
                 <img
                   src={SHOTS[0].src}
                   alt={SHOTS[0].alt}
                   loading="eager"
                   className="w-full aspect-[2400/1080] object-cover"
                 />
-                <figcaption className="flex items-center justify-between border-t border-white/[0.04] px-5 py-3.5">
+                <span className="flex items-center justify-between border-t border-white/[0.04] px-5 py-3.5">
                   <span className="text-sm text-zinc-200">{SHOTS[0].label}</span>
                   <span className="font-mono text-[10px] text-zinc-600">
                     Android 15 · 2400×1080 · offline account
                   </span>
-                </figcaption>
-              </figure>
+                </span>
+              </button>
             </Reveal>
             <div className="grid gap-4 md:grid-cols-3">
               {SHOTS.slice(1).map((shot, index) => (
                 <Reveal key={shot.src} delay={0.06 + index * 0.06}>
-                  <figure className="shot-frame overflow-hidden rounded-xl border border-white/[0.05] bg-panel">
+                  <button
+                    type="button"
+                    onClick={() => setOpenShot(shot)}
+                    className="shot-frame block w-full overflow-hidden rounded-xl border border-white/[0.05] bg-panel text-left"
+                  >
                     <img
                       src={shot.src}
                       alt={shot.alt}
                       loading="lazy"
                       className="w-full aspect-[2400/1080] object-cover"
                     />
-                    <figcaption className="flex items-center justify-between border-t border-white/[0.04] px-4 py-3">
+                    <span className="flex items-center justify-between border-t border-white/[0.04] px-4 py-3">
                       <span className="text-[13px] text-zinc-300">{shot.label}</span>
                       <span className="font-mono text-[10px] text-zinc-600">26.3</span>
-                    </figcaption>
-                  </figure>
+                    </span>
+                  </button>
                 </Reveal>
               ))}
             </div>
@@ -436,9 +671,38 @@ function App() {
                 <div className="mt-4 font-mono text-[10px] text-zinc-600">
                   6.6 MB · x86_64 · chmod +x required
                 </div>
+                <div className="mt-4 rounded-lg bg-black/30 px-3 py-2.5">
+                  <p className="font-mono text-[10px] leading-relaxed break-all text-zinc-600">
+                    sha256 {APPIMAGE_SHA256}
+                  </p>
+                </div>
               </div>
             </Reveal>
           </div>
+
+          <Reveal delay={0.12}>
+            <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-white/[0.06] bg-panel px-7 py-5 text-sm text-zinc-400">
+              <span className="text-zinc-300">Also here:</span>
+              <a
+                href={REPO}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 transition-colors hover:text-white"
+              >
+                <IconGithub size={16} />
+                Source, GPL-3, builds from a clean clone
+              </a>
+              <a
+                href={RELEASES}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 transition-colors hover:text-white"
+              >
+                <IconDownload size={16} />
+                Release notes and checksums
+              </a>
+            </div>
+          </Reveal>
 
           <Reveal delay={0.1}>
             <div className="mt-4 rounded-xl bg-panel p-8">
@@ -491,17 +755,42 @@ function App() {
             <h4 className="text-[13px] font-semibold">Project</h4>
             <ul className="mt-3 space-y-2 text-sm text-zinc-500">
               <li>
-                <a href="https://github.com/Leonxlnx/Basalt" className="transition-colors hover:text-zinc-200">
+                <a
+                  href={REPO}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-colors hover:text-zinc-200"
+                >
                   Source
                 </a>
               </li>
               <li>
-                <a href="https://github.com/Leonxlnx/Basalt/releases" className="transition-colors hover:text-zinc-200">
+                <a
+                  href={RELEASES}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-colors hover:text-zinc-200"
+                >
                   Releases
                 </a>
               </li>
               <li>
-                <a href="https://github.com/ZalithLauncher/ZalithLauncher2" className="transition-colors hover:text-zinc-200">
+                <a
+                  href={`${REPO}/blob/main/LICENSE`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-colors hover:text-zinc-200"
+                >
+                  License
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://github.com/ZalithLauncher/ZalithLauncher2"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="transition-colors hover:text-zinc-200"
+                >
                   Upstream
                 </a>
               </li>
@@ -523,6 +812,8 @@ function App() {
           </div>
         </div>
       </footer>
+
+      {openShot && <Lightbox shot={openShot} onClose={() => setOpenShot(null)} />}
     </div>
   );
 }
