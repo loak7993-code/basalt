@@ -4,7 +4,7 @@ set -uo pipefail
 SHARE_LOG=/root/basalt/website/share/zrok-share.log
 URL_FILE=/root/basalt/website/share/zrok-url.txt
 : > "$SHARE_LOG"
-zrok2 share public --headless --backend-mode proxy http://127.0.0.1:8899 >>"$SHARE_LOG" 2>&1 &
+zrok2 share public --headless --backend-mode proxy http://127.0.0.1:8080 >>"$SHARE_LOG" 2>&1 &
 for _ in $(seq 1 60); do
   HOST=$(grep -oE '[a-z0-9-]+\.shares\.zrok\.io' "$SHARE_LOG" | head -1)
   [ -n "$HOST" ] && break

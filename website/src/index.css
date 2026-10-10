@@ -51,15 +51,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Faint emerald glow haze in the corners: the only color wash. */
 .glow-haze {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(600px 400px at 8% -5%, rgba(52, 211, 153, 0.07), transparent 70%),
-    radial-gradient(700px 500px at 100% 108%, rgba(52, 211, 153, 0.05), transparent 70%);
+    radial-gradient(800px 500px at 5% -5%, rgba(52, 211, 153, 0.06), transparent 70%),
+    radial-gradient(900px 600px at 100% 110%, rgba(52, 211, 153, 0.04), transparent 70%);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -72,4 +71,12 @@ body {
   html {
     scroll-behavior: auto;
   }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.cursor-blink {
+  animation: blink 1.2s step-end infinite;
 }
