@@ -111,7 +111,12 @@ pub fn default_ram_allocation(device_ram_mb: f64, is_32_bit: bool) -> i64 {
     let max: f64 = if is_32_bit || device_ram_mb < 2048.0 {
         1024.0_f64.min(device_ram_mb)
     } else {
-        device_ram_mb - if device_ram_mb < 3064.0 { 800.0 } else { 1024.0 }
+        device_ram_mb
+            - if device_ram_mb < 3064.0 {
+                800.0
+            } else {
+                1024.0
+            }
     };
     let target = (device_ram_mb * 0.55) as i64;
     let floor = 1536_i64.min(max as i64);

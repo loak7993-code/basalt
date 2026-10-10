@@ -90,9 +90,21 @@ impl App {
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         let mut fonts = egui::FontDefinitions::default();
         for (family, key, name) in [
-            (egui::FontFamily::Proportional, "geist-regular", "Geist-Regular"),
-            (egui::FontFamily::Proportional, "geist-medium", "Geist-Medium"),
-            (egui::FontFamily::Proportional, "geist-semibold", "Geist-SemiBold"),
+            (
+                egui::FontFamily::Proportional,
+                "geist-regular",
+                "Geist-Regular",
+            ),
+            (
+                egui::FontFamily::Proportional,
+                "geist-medium",
+                "Geist-Medium",
+            ),
+            (
+                egui::FontFamily::Proportional,
+                "geist-semibold",
+                "Geist-SemiBold",
+            ),
         ] {
             let data = std::fs::read(font_path(name)).unwrap_or_default();
             if !data.is_empty() {
@@ -142,8 +154,7 @@ impl App {
         });
         let done_tx = tx.clone();
         std::thread::spawn(move || {
-            let result =
-                basalt_cli::install::run_flow(version.as_deref(), progress, bytes_cb);
+            let result = basalt_cli::install::run_flow(version.as_deref(), progress, bytes_cb);
             let _ = done_tx.send(InstallEvent::Done(result));
         });
         self.install_log.clear();
@@ -159,16 +170,9 @@ impl App {
             let sink = Arc::new(move |line: String| {
                 let _ = sink_tx.send(InstallEvent::Log(line));
             });
-            let result = basalt_cli::launch::run_flow(
-                Some(&version),
-                None,
-                None,
-                &[],
-                None,
-                sink,
-            )
-            .map(|code| format!("game exited with code {code}"))
-            .map_err(|message| vec![message]);
+            let result = basalt_cli::launch::run_flow(Some(&version), None, None, &[], None, sink)
+                .map(|code| format!("game exited with code {code}"))
+                .map_err(|message| vec![message]);
             let _ = done_tx.send(InstallEvent::Done(result));
         });
         self.install_log.clear();
@@ -180,8 +184,14 @@ fn font_path(name: &str) -> PathBuf {
     // Bundled next to the binary by the AppImage; falls back to the repo layout
     // for development runs.
     for base in [
-        std::env::var("APPDIR").map(PathBuf::from).unwrap_or_default().join("usr/share/fonts/basalt"),
-        std::env::var("CARGO_MANIFEST_DIR").map(PathBuf::from).unwrap_or_default().join("assets/fonts"),
+        std::env::var("APPDIR")
+            .map(PathBuf::from)
+            .unwrap_or_default()
+            .join("usr/share/fonts/basalt"),
+        std::env::var("CARGO_MANIFEST_DIR")
+            .map(PathBuf::from)
+            .unwrap_or_default()
+            .join("assets/fonts"),
     ] {
         let path = base.join(name);
         let _ = &path;
@@ -343,7 +353,11 @@ impl eframe::App for App {
                                 .clicked();
                             if install_clicked && self.job.is_none() {
                                 let version = self.version_input.trim().to_string();
-                                let version = if version.is_empty() { None } else { Some(version) };
+                                let version = if version.is_empty() {
+                                    None
+                                } else {
+                                    Some(version)
+                                };
                                 self.start_install(version);
                             }
                             let _ = field;
@@ -414,9 +428,5 @@ fn main() -> eframe::Result<()> {
             .with_title("Basalt"),
         ..Default::default()
     };
-    eframe::run_native(
-        "Basalt",
-        options,
-        Box::new(|cc| Ok(Box::new(App::new(cc)))),
-    )
+    eframe::run_native("Basalt", options, Box::new(|cc| Ok(Box::new(App::new(cc)))))
 }

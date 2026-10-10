@@ -8,8 +8,6 @@
  * (at your option) any later version.
  */
 
-
-
 use basalt_cli::{accounts, install, launch, paths};
 use clap::{Parser, Subcommand};
 
@@ -66,7 +64,13 @@ fn main() {
             server,
             jvm_args,
             ram,
-        } => launch::run(version.as_deref(), name.as_deref(), server.as_deref(), &jvm_args, ram),
+        } => launch::run(
+            version.as_deref(),
+            name.as_deref(),
+            server.as_deref(),
+            &jvm_args,
+            ram,
+        ),
         Command::Account { name } => accounts::set(&name),
         Command::Paths => {
             println!("data:   {}", paths::data_dir().display());

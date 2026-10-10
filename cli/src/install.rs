@@ -5,11 +5,10 @@ use crate::paths;
 use basalt_engine::manifest::VersionManifest;
 use basalt_engine::rules::{Features, RuleContext};
 use std::fs;
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
 
-const MANIFEST_URL: &str =
-    "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
+const MANIFEST_URL: &str = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json";
 
 #[derive(serde::Deserialize)]
 struct VersionEntry {
@@ -69,7 +68,15 @@ fn asset_objects(index_url: &str) -> Result<Vec<(String, AssetObject)>, String> 
     Ok(index
         .objects
         .into_iter()
-        .map(|(name, def)| (name, AssetObject { hash: def.hash, size: def.size }))
+        .map(|(name, def)| {
+            (
+                name,
+                AssetObject {
+                    hash: def.hash,
+                    size: def.size,
+                },
+            )
+        })
         .collect())
 }
 
@@ -92,7 +99,9 @@ fn extract_natives(manifest: &VersionManifest, context: &RuleContext) -> Result<
         let file = fs::File::open(&jar).map_err(|e| format!("open {path}: {e}"))?;
         let mut archive = zip::ZipArchive::new(file).map_err(|e| format!("{path}: {e}"))?;
         for i in 0..archive.len() {
-            let mut entry = archive.by_index(i).map_err(|e| format!("{path}#{i}: {e}"))?;
+            let mut entry = archive
+                .by_index(i)
+                .map_err(|e| format!("{path}#{i}: {e}"))?;
             let Some(name) = entry.enclosed_name().map(|p| p.to_path_buf()) else {
                 continue;
             };
@@ -105,10 +114,9 @@ fn extract_natives(manifest: &VersionManifest, context: &RuleContext) -> Result<
                 fs::create_dir_all(parent)
                     .map_err(|e| format!("mkdir {}: {e}", parent.display()))?;
             }
-            let mut out =
-                fs::File::create(&target).map_err(|e| format!("create {}: {e}", target.display()))?;
-            std::io::copy(&mut entry, &mut out)
-                .map_err(|e| format!("copy {path}#{i}: {e}"))?;
+            let mut out = fs::File::create(&target)
+                .map_err(|e| format!("create {}: {e}", target.display()))?;
+            std::io::copy(&mut entry, &mut out).map_err(|e| format!("copy {path}#{i}: {e}"))?;
         }
     }
     Ok(())
@@ -239,7 +247,9 @@ pub fn run_flow(
     if let Some(asset_index) = &manifest.asset_index {
         tasks.push(FetchTask {
             urls: vec![asset_index.url.clone()],
-            target: paths::assets_dir().join("indexes").join(format!("{}.json", asset_index.id)),
+            target: paths::assets_dir()
+                .join("indexes")
+                .join(format!("{}.json", asset_index.id)),
             expected_sha1: asset_index.sha1.clone(),
             expected_size: asset_index.total_size,
         });
@@ -248,17 +258,21 @@ pub fn run_flow(
     progress(format!("downloading {} files ...", tasks.len()));
     let progress_libs = Arc::clone(&progress);
     let byte_progress_libs = Arc::clone(&byte_progress);
-    let failures = run_all(tasks, 16, Arc::new(move |p| {
-        (byte_progress_libs)(p);
-        if p.done % 250 == 0 || p.done == p.total {
-            (progress_libs)(format!(
-                "  {}/{} · {}",
-                p.done,
-                p.total,
-                crate::download::human_bytes(p.bytes_done)
-            ));
-        }
-    }));
+    let failures = run_all(
+        tasks,
+        16,
+        Arc::new(move |p| {
+            (byte_progress_libs)(p);
+            if p.done % 250 == 0 || p.done == p.total {
+                (progress_libs)(format!(
+                    "  {}/{} · {}",
+                    p.done,
+                    p.total,
+                    crate::download::human_bytes(p.bytes_done)
+                ));
+            }
+        }),
+    );
     if !failures.is_empty() {
         errors.push(format!("error: {} file(s) failed:", failures.len()));
         for (path, err) in failures.iter().take(10) {
@@ -279,24 +293,31 @@ pub fn run_flow(
             .into_iter()
             .map(|(_name, obj)| FetchTask {
                 urls: vec![format!("{}/{}/{}", base, &obj.hash[..2], obj.hash)],
-                target: paths::assets_dir().join("objects").join(&obj.hash[..2]).join(&obj.hash),
+                target: paths::assets_dir()
+                    .join("objects")
+                    .join(&obj.hash[..2])
+                    .join(&obj.hash),
                 expected_sha1: Some(obj.hash.clone()),
                 expected_size: obj.size,
             })
             .collect();
         let progress_assets = Arc::clone(&progress);
         let byte_progress = Arc::clone(&byte_progress);
-        let failures = run_all(asset_tasks, 24, Arc::new(move |p| {
-            (byte_progress)(p);
-            if p.done % 500 == 0 || p.done == p.total {
-                (progress_assets)(format!(
-                    "  {}/{} · {}",
-                    p.done,
-                    p.total,
-                    crate::download::human_bytes(p.bytes_done)
-                ));
-            }
-        }));
+        let failures = run_all(
+            asset_tasks,
+            24,
+            Arc::new(move |p| {
+                (byte_progress)(p);
+                if p.done % 500 == 0 || p.done == p.total {
+                    (progress_assets)(format!(
+                        "  {}/{} · {}",
+                        p.done,
+                        p.total,
+                        crate::download::human_bytes(p.bytes_done)
+                    ));
+                }
+            }),
+        );
         if !failures.is_empty() {
             errors.push(format!("error: {} asset object(s) failed:", failures.len()));
             for (path, err) in failures.iter().take(10) {

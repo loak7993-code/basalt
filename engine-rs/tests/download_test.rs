@@ -67,6 +67,10 @@ fn retry_rotates_candidates_and_succeeds() {
     }];
     let id = download_start(specs, 1);
     let failures = download_wait(id).unwrap();
-    assert!(failures.is_empty(), "rotation+retry should recover: {:?}", failures);
+    assert!(
+        failures.is_empty(),
+        "rotation+retry should recover: {:?}",
+        failures
+    );
     assert!(target.exists());
 }

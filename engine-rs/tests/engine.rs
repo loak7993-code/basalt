@@ -92,7 +92,12 @@ fn classpath_on_linux_x86_64_is_client_plus_allowed_libraries() {
             l.downloads
                 .as_ref()
                 .and_then(|d| d.artifact.as_ref())
-                .map(|a| a.path.as_deref().map(|p| !p.trim().is_empty()).unwrap_or(false))
+                .map(|a| {
+                    a.path
+                        .as_deref()
+                        .map(|p| !p.trim().is_empty())
+                        .unwrap_or(false)
+                })
                 .unwrap_or(false)
         })
         .collect();
@@ -130,18 +135,30 @@ fn tuned_g1_strips_manifest_collector_selection() {
     let plan = build(&m, &layout(), &auth(), &default_options());
     assert!(!plan.jvm_args.contains(&"-XX:+UseZGC".to_string()));
     assert!(plan.jvm_args.contains(&"-XX:+UseG1GC".to_string()));
-    assert!(plan.jvm_args.contains(&"-XX:G1NewSizePercent=20".to_string()));
-    assert!(plan.jvm_args.contains(&"-XX:G1ReservePercent=20".to_string()));
-    assert!(plan.jvm_args.contains(&"-XX:MaxGCPauseMillis=40".to_string()));
-    assert!(plan.jvm_args.contains(&"-XX:G1HeapRegionSize=16M".to_string()));
-    assert!(plan.jvm_args.contains(&"-XX:+DisableExplicitGC".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"-XX:G1NewSizePercent=20".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"-XX:G1ReservePercent=20".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"-XX:MaxGCPauseMillis=40".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"-XX:G1HeapRegionSize=16M".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"-XX:+DisableExplicitGC".to_string()));
 }
 
 #[test]
 fn object_layout_flags_survive_gc_override() {
     let m = manifest();
     let plan = build(&m, &layout(), &auth(), &default_options());
-    assert!(plan.jvm_args.contains(&"-XX:+UseCompactObjectHeaders".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"-XX:+UseCompactObjectHeaders".to_string()));
 }
 
 #[test]
@@ -186,7 +203,9 @@ fn custom_gc_passes_user_flags_through() {
 fn active_processor_count_pinned() {
     let m = manifest();
     let plan = build(&m, &layout(), &auth(), &default_options());
-    assert!(plan.jvm_args.contains(&"-XX:ActiveProcessorCount=8".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"-XX:ActiveProcessorCount=8".to_string()));
 }
 
 #[test]
@@ -207,7 +226,9 @@ fn plan_command_list_is_well_formed() {
     let command = plan.to_command_list("/runtime/bin/java");
     assert_eq!(command.first().unwrap(), "/runtime/bin/java");
     assert!(command.contains(plan.wrapper_class.as_ref().unwrap()));
-    assert!(command.iter().any(|s| s == "net.minecraft.client.main.Main"));
+    assert!(command
+        .iter()
+        .any(|s| s == "net.minecraft.client.main.Main"));
 }
 
 #[test]
@@ -226,7 +247,10 @@ fn default_ram_allocation_matches_the_kotlin_engine() {
 
 #[test]
 fn platform_mapping() {
-    assert_eq!(Platform::from("Linux", "aarch64"), Some(Platform::LinuxArm64));
+    assert_eq!(
+        Platform::from("Linux", "aarch64"),
+        Some(Platform::LinuxArm64)
+    );
     assert_eq!(Platform::from("Linux", "amd64"), Some(Platform::LinuxX8664));
     assert_eq!(Platform::from("windows", "amd64"), None);
     assert_eq!(Platform::from("linux", "i386"), None);
@@ -258,11 +282,19 @@ fn android_mode_matches_upstream_string_only_semantics() {
     };
     let plan = b.build();
     // Manifest jvm strings survive untouched (no substitution applied).
-    assert!(plan.jvm_args.contains(&"-XX:StackShadowPages=32".to_string()));
-    assert!(plan.jvm_args.contains(&"--enable-native-access=ALL-UNNAMED".to_string()));
-    assert!(plan.jvm_args.contains(&"-Djava.library.path=${natives_directory}/java".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"-XX:StackShadowPages=32".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"--enable-native-access=ALL-UNNAMED".to_string()));
+    assert!(plan
+        .jvm_args
+        .contains(&"-Djava.library.path=${natives_directory}/java".to_string()));
     // default-user-jvm flags are absent.
-    assert!(!plan.jvm_args.contains(&"-XX:+UseCompactObjectHeaders".to_string()));
+    assert!(!plan
+        .jvm_args
+        .contains(&"-XX:+UseCompactObjectHeaders".to_string()));
     assert!(!plan.jvm_args.contains(&"-XX:+UseZGC".to_string()));
     // Game strings intact with placeholders for the host to fill.
     assert!(plan.game_args.contains(&"${auth_player_name}".to_string()));

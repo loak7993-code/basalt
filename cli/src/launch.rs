@@ -5,8 +5,8 @@ use basalt_engine::exec::{ChildProcessExec, ExecStrategy};
 use basalt_engine::manifest::VersionManifest;
 use basalt_engine::plan::{AuthContext, EngineOptions, InstallLayout, MemoryOptions, PlanBuilder};
 use std::fs;
-use std::sync::Arc;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 pub fn run(
     version: Option<&str>,
@@ -15,8 +15,7 @@ pub fn run(
     jvm_args: &[String],
     ram: Option<i64>,
 ) -> i32 {
-    let sink: Arc<dyn Fn(String) + Send + Sync> =
-        Arc::new(move |line: String| println!("{line}"));
+    let sink: Arc<dyn Fn(String) + Send + Sync> = Arc::new(move |line: String| println!("{line}"));
     match run_flow(version, name, server, jvm_args, ram, sink) {
         Ok(code) => code,
         Err(message) => {
@@ -83,7 +82,7 @@ pub fn run_flow(
         .map(|a| a.id.clone())
         .unwrap_or_else(|| "legacy".into());
     let layout = InstallLayout {
-        client_jar: client_jar,
+        client_jar,
         libraries_dir: paths::libraries_dir(),
         natives_dir: paths::natives_dir(),
         game_dir: paths::version_dir(&id).join(".minecraft"),
@@ -117,6 +116,11 @@ pub fn run_flow(
                 .unwrap_or(4),
         ),
         strip_always_pre_touch: true,
+        // Desktop launch: Mojang's default-user-jvm entries apply, values are
+        // substituted by the engine, and the engine owns the classpath.
+        ignore_default_user_jvm: false,
+        strings_only: false,
+        substitute_classpath: false,
     };
     let quick_play = server.map(|address| basalt_engine::plan::QuickPlay::Server {
         address: address.to_string(),
@@ -155,9 +159,11 @@ pub fn run_flow(
     ));
 
     let exec = ChildProcessExec;
-    Ok(exec.exec(&plan, &runtime.java_bin.to_string_lossy(), &mut |line| {
-        (progress)(line.to_string());
-    }))
+    Ok(
+        exec.exec(&plan, &runtime.java_bin.to_string_lossy(), &mut |line| {
+            (progress)(line.to_string());
+        }),
+    )
 }
 
 fn latest_installed() -> Option<String> {

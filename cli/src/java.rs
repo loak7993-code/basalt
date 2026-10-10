@@ -14,7 +14,11 @@ fn major_from_version_output(output: &str) -> Option<i64> {
         if let Some(rest) = token.strip_prefix('"') {
             let version = rest.trim_end_matches('"');
             let major = version.split('.').next()?.parse::<i64>().ok()?;
-            return Some(if version.starts_with("1.") { major_of_legacy(version) } else { major });
+            return Some(if version.starts_with("1.") {
+                major_of_legacy(version)
+            } else {
+                major
+            });
         }
     }
     // OpenJDK 25 format without quotes

@@ -3,6 +3,37 @@
 All notable changes to this fork are recorded here. Upstream history lives in
 the git lineage of the fork point.
 
+## Unreleased
+
+Project and site work published after the 2.0.0 tag:
+
+- Published at `github.com/loak7993-code/basalt` (public, GPL-3). Build
+  output, `node_modules`, the served site bundle, the release keystore and the
+  share log are no longer tracked, and the release keystore passwords were
+  removed from `gradle.properties`. History was rewritten to purge those paths,
+  which took the repository from 1.8 GB to 443 MB. The shipped binaries are
+  release assets, not commits.
+- Tag `v2.0.0` carries the arm64 APK, the universal APK and the AppImage, with
+  release notes and the verification record.
+- Linux CLI build fix: `EngineOptions` gained `ignore_default_user_jvm`,
+  `strings_only` and `substitute_classpath` for the Android launch-plan work
+  and `cli/src/launch.rs` was never updated, so `cargo build` in `cli/` failed
+  with E0063. Desktop now sets all three to false, which is the behaviour the
+  shipped binary already had.
+- Dead code removed: the CLI's unused `download_with_retry` helper and its
+  `RETRY_ATTEMPTS` constant (superseded by the inline URL rotation in
+  `run_all`), plus unused imports in the engine.
+- Engine and CLI are now `cargo fmt` clean and `cargo clippy -D warnings`
+  clean. GitHub Actions runs both test suites, both lint gates and the site
+  build on every push.
+- Site: benchmark section with the measured install times (Android 120s Kotlin
+  engine vs 37s Rust engine, Linux 30s vs 13s), a screenshot lightbox, a
+  copyable one-line Linux install command, the AppImage sha256 next to the
+  download, OG card, favicon, skip link and visible focus rings.
+- Site fix: the hero's flex child had `min-width: auto`, so the headline
+  overflowed its column and the section's `overflow-hidden` clipped it on
+  mobile. Fixed with `min-w-0` and a responsive type scale.
+
 ## 2.0.0 - 2026-10-09
 
 Update (2026-10-10): the Android download engine now runs in Rust too. The

@@ -18,7 +18,7 @@ const EASE = [0.16, 1, 0.3, 1] as const;
 const REPO = "https://github.com/loak7993-code/basalt";
 const RELEASES = `${REPO}/releases`;
 const APPIMAGE_SHA256 =
-  "3f09bb47d074aa90f583d51effa8bddb01e62dc58b8bcd2b581ee295e13ec0c2";
+  "bc6a05ccb3bf620869c8033b7215da52033c599fdd722e1de9b8d921cfdd01f3";
 const LINUX_RUN =
   "curl -LO https://github.com/loak7993-code/basalt/releases/download/v2.0.0/Basalt-2.0.0-x86_64.AppImage && chmod +x Basalt-2.0.0-x86_64.AppImage && ./Basalt-2.0.0-x86_64.AppImage";
 
@@ -669,7 +669,7 @@ function App() {
                   </a>
                 </div>
                 <div className="mt-4 font-mono text-[10px] text-zinc-600">
-                  6.6 MB · x86_64 · chmod +x required
+                  6.4 MB · x86_64 · chmod +x required
                 </div>
                 <div className="mt-4 rounded-lg bg-black/30 px-3 py-2.5">
                   <p className="font-mono text-[10px] leading-relaxed break-all text-zinc-600">

@@ -6,12 +6,7 @@ use crate::plan::LaunchPlan;
 pub trait ExecStrategy {
     /// Runs the plan and streams each output line to the sink.
     /// Returns the process exit code.
-    fn exec(
-        &self,
-        plan: &LaunchPlan,
-        java_binary: &str,
-        sink: &mut dyn FnMut(&str),
-    ) -> i32;
+    fn exec(&self, plan: &LaunchPlan, java_binary: &str, sink: &mut dyn FnMut(&str)) -> i32;
 }
 
 /// Reference exec: a child java process with merged output. The Android host
@@ -20,12 +15,7 @@ pub trait ExecStrategy {
 pub struct ChildProcessExec;
 
 impl ExecStrategy for ChildProcessExec {
-    fn exec(
-        &self,
-        plan: &LaunchPlan,
-        java_binary: &str,
-        sink: &mut dyn FnMut(&str),
-    ) -> i32 {
+    fn exec(&self, plan: &LaunchPlan, java_binary: &str, sink: &mut dyn FnMut(&str)) -> i32 {
         let command = plan.to_command_list(java_binary);
         let mut process = std::process::Command::new(&command[0])
             .args(&command[1..])
@@ -36,7 +26,10 @@ impl ExecStrategy for ChildProcessExec {
             .expect("failed to spawn the java process");
         let stdout = process.stdout.take().expect("stdout was piped");
         use std::io::BufRead;
-        for line in std::io::BufReader::new(stdout).lines().map_while(Result::ok) {
+        for line in std::io::BufReader::new(stdout)
+            .lines()
+            .map_while(Result::ok)
+        {
             sink(&line);
         }
         match process.wait() {

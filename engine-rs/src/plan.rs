@@ -199,7 +199,9 @@ impl<'a> PlanBuilder<'a> {
         }
 
         if self.options.strip_always_pre_touch
-            && heap_mb.map(|h| h < ALWAYS_PRE_TOUCH_MIN_HEAP_MB).unwrap_or(false)
+            && heap_mb
+                .map(|h| h < ALWAYS_PRE_TOUCH_MIN_HEAP_MB)
+                .unwrap_or(false)
         {
             jvm_args.retain(|arg| arg != "-XX:+AlwaysPreTouch");
         }
@@ -288,7 +290,12 @@ impl<'a> PlanBuilder<'a> {
             .downloads
             .as_ref()
             .and_then(|d| d.artifact.as_ref())
-            .filter(|a| a.path.as_deref().map(|p| !p.trim().is_empty()).unwrap_or(false))
+            .filter(|a| {
+                a.path
+                    .as_deref()
+                    .map(|p| !p.trim().is_empty())
+                    .unwrap_or(false)
+            })
     }
 
     fn rule_context(&self) -> crate::rules::RuleContext {
@@ -376,8 +383,14 @@ impl<'a> PlanBuilder<'a> {
             ("assets_root", &self.layout.assets_dir.to_string_lossy()),
             ("assets_index_id", &self.layout.asset_index_id),
             ("assets_index_name", &self.layout.asset_index_id),
-            ("natives_directory", &self.layout.natives_dir.to_string_lossy()),
-            ("library_directory", &self.layout.libraries_dir.to_string_lossy()),
+            (
+                "natives_directory",
+                &self.layout.natives_dir.to_string_lossy(),
+            ),
+            (
+                "library_directory",
+                &self.layout.libraries_dir.to_string_lossy(),
+            ),
             ("classpath", classpath.as_str()),
             ("classpath_separator", ":"),
             ("resolution_width", width.as_str()),

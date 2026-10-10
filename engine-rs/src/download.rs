@@ -6,10 +6,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use ureq::Agent;
 
 fn agent() -> &'static Agent {
@@ -203,13 +203,10 @@ pub fn download_start(specs: Vec<DownloadSpec>, workers: usize) -> u32 {
                             snap.bytes_done = b;
                         }
                         Err(error) => {
-                            failures
-                                .lock()
-                                .unwrap()
-                                .push(DownloadFailure {
-                                    path: spec.target.clone(),
-                                    error,
-                                });
+                            failures.lock().unwrap().push(DownloadFailure {
+                                path: spec.target.clone(),
+                                error,
+                            });
                             let d = done.fetch_add(1, Ordering::SeqCst) + 1;
                             let mut snap = job.progress.lock().unwrap();
                             snap.done = d;
@@ -239,7 +236,8 @@ pub fn download_start(specs: Vec<DownloadSpec>, workers: usize) -> u32 {
 /// Snapshot for a running or finished job; None for unknown ids.
 pub fn download_progress(id: u32) -> Option<ProgressSnapshot> {
     let jobs = jobs().lock().unwrap();
-    jobs.get(&id).map(|job| job.progress.lock().unwrap().clone())
+    jobs.get(&id)
+        .map(|job| job.progress.lock().unwrap().clone())
 }
 
 /// Blocks until the job finishes and returns its failures.

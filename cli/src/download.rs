@@ -87,8 +87,6 @@ fn file_sha1(path: &Path) -> Option<String> {
     Some(hasher.digest().to_string())
 }
 
-const RETRY_ATTEMPTS: usize = 3;
-
 fn download_one(url: &str, target: &Path, expected_sha1: Option<&str>) -> Result<(), String> {
     let response = shared_agent()
         .get(url)
@@ -119,25 +117,6 @@ fn download_one(url: &str, target: &Path, expected_sha1: Option<&str>) -> Result
     Ok(())
 }
 
-/// Downloads one file with retries and backoff, rotating candidate URLs.
-fn download_with_retry(task: &FetchTask) -> Result<(), String> {
-    let mut last: Option<String> = None;
-    for attempt in 0..RETRY_ATTEMPTS {
-        if attempt > 0 {
-            std::thread::sleep(Duration::from_millis(400 * (1 << attempt)));
-        }
-        if task.urls.is_empty() {
-            return Err("no candidate urls".into());
-        }
-        let url = &task.urls[attempt % task.urls.len()];
-        match download_one(url, &task.target, task.expected_sha1.as_deref()) {
-            Ok(()) => return Ok(()),
-            Err(err) => last = Some(err),
-        }
-    }
-    Err(last.unwrap_or_else(|| "download failed".into()))
-}
-
 /// Byte-level progress snapshot.
 #[derive(Debug, Clone, Copy)]
 pub struct ByteProgress {
@@ -147,8 +126,9 @@ pub struct ByteProgress {
     pub bytes_total: u64,
 }
 
-/// Runs every task with a bounded worker pool, shared connections, retries,
-/// and byte-accurate progress. Returns the failures.
+/// Runs every task on a bounded worker pool over one shared keep-alive
+/// agent, rotating a task's candidate URLs until one succeeds, with
+/// byte-accurate progress. Returns the failures.
 pub fn run_all(
     tasks: Vec<FetchTask>,
     workers: usize,
@@ -160,7 +140,6 @@ pub fn run_all(
     let done = Arc::new(AtomicUsize::new(0));
     let (tx, rx) = mpsc::channel::<(PathBuf, String)>();
     let queue = Arc::new(Mutex::new(tasks));
-    let started = Instant::now();
 
     std::thread::scope(|scope| {
         for _ in 0..workers {
@@ -236,11 +215,17 @@ pub struct RateTracker {
     started: Instant,
 }
 
-impl RateTracker {
-    pub fn new() -> Self {
+impl Default for RateTracker {
+    fn default() -> Self {
         Self {
             started: Instant::now(),
         }
+    }
+}
+
+impl RateTracker {
+    pub fn new() -> Self {
+        Self::default()
     }
 
     pub fn mb_s(&self, bytes_done: u64) -> f64 {

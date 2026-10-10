@@ -28,7 +28,8 @@ fn rust_plan_matches_the_captured_device_launch_args() {
         client_jar: "/tmp/26.3.jar".into(),
         libraries_dir: "/tmp/libraries".into(),
         natives_dir: "/tmp/natives".into(),
-        game_dir: "/storage/emulated/0/Android/data/dev.leonxlnx.basalt.debug/files/.minecraft".into(),
+        game_dir: "/storage/emulated/0/Android/data/dev.leonxlnx.basalt.debug/files/.minecraft"
+            .into(),
         assets_dir: "/tmp/assets".into(),
         asset_index_id: "34".into(),
         runtime_home: "/tmp/runtime".into(),

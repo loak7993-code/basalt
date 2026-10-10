@@ -8,7 +8,6 @@ use jni::objects::{JClass, JString};
 use jni::sys::jint;
 use jni::JNIEnv;
 
-use crate::download::ProgressSnapshot;
 use crate::manifest::{Platform, VersionManifest};
 use crate::plan::{AuthContext, EngineOptions, InstallLayout, PlanBuilder};
 
@@ -34,8 +33,7 @@ pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeP
 ) -> JString<'local> {
     let value = (|| -> Result<serde_json::Value, String> {
         let input = to_string(&mut env, &manifest_json)?;
-        let manifest: VersionManifest =
-            serde_json::from_str(&input).map_err(|e| e.to_string())?;
+        let manifest: VersionManifest = serde_json::from_str(&input).map_err(|e| e.to_string())?;
         Ok(serde_json::json!({
             "id": manifest.id,
             "mainClass": manifest.main_class,
@@ -109,7 +107,9 @@ pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeB
 /// Applies the engine GC policy to an existing arg list (JSON array in, array
 /// out). Mirrors gcPolicyFromArgs + applyTo.
 #[no_mangle]
-pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeApplyGcPolicy<'local>(
+pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeApplyGcPolicy<
+    'local,
+>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     args_json: JString<'local>,
@@ -128,7 +128,9 @@ pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeA
 /// The device-proportional memory default in Rust: 55% of RAM, floor 1536 MB
 /// within device limits. Returns the value in MB.
 #[no_mangle]
-pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDefaultRamAllocation<'local>(
+pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDefaultRamAllocation<
+    'local,
+>(
     _env: JNIEnv<'local>,
     _class: JClass<'local>,
     device_ram_mb: jint,
@@ -140,7 +142,9 @@ pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeD
 /// Starts a download job. tasks_json: array of
 /// {urls:[...], target:"...", sha1:..., size:n}. Returns the job id.
 #[no_mangle]
-pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDownloadStart<'local>(
+pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDownloadStart<
+    'local,
+>(
     mut env: JNIEnv<'local>,
     _class: JClass<'local>,
     tasks_json: JString<'local>,
@@ -158,20 +162,23 @@ pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeD
 
 /// Progress snapshot for a job: {done,total,bytesDone,bytesTotal,finished}.
 #[no_mangle]
-pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDownloadProgress<'local>(
-    mut env: JNIEnv<'local>,
+pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDownloadProgress<
+    'local,
+>(
+    env: JNIEnv<'local>,
     _class: JClass<'local>,
     job_id: jint,
 ) -> JString<'local> {
-    let snap = crate::download::download_progress(job_id as u32)
-        .unwrap_or(ProgressSnapshot::default());
+    let snap = crate::download::download_progress(job_id as u32).unwrap_or_default();
     out(&env, Ok(serde_json::to_string(&snap).unwrap_or_default()))
 }
 
 /// Blocks until the job finishes; returns {failures:[{path,error}]}.
 #[no_mangle]
-pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDownloadWait<'local>(
-    mut env: JNIEnv<'local>,
+pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDownloadWait<
+    'local,
+>(
+    env: JNIEnv<'local>,
     _class: JClass<'local>,
     job_id: jint,
 ) -> JString<'local> {
@@ -182,4 +189,3 @@ pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeD
     })();
     out(&env, value)
 }
-

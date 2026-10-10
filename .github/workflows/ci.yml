@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  engine:
+    name: Rust engine and Linux CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - name: Engine tests
+        working-directory: engine-rs
+        run: cargo test --release
+      - name: Engine lints
+        working-directory: engine-rs
+        run: |
+          cargo fmt --check
+          cargo clippy --release -- -D warnings
+      - name: CLI builds clean
+        working-directory: cli
+        run: |
+          cargo build --release
+          cargo fmt --check
+          cargo clippy --release -- -D warnings
+      - name: CLI smoke test
+        run: |
+          ./cli/target/release/basalt --help
+          ./cli/target/release/basalt paths
+
+  site:
+    name: Product site
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run build

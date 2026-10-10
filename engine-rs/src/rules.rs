@@ -37,11 +37,7 @@ pub struct RuleContext {
 
 /// Free-function form: allowed on a specific platform without building a
 /// context. Used by the installer's cross-platform download filter.
-pub fn is_allowed_on(
-    library: &LibraryEntry,
-    platform: Platform,
-    features: &Features,
-) -> bool {
+pub fn is_allowed_on(library: &LibraryEntry, platform: Platform, features: &Features) -> bool {
     RuleContext {
         platform,
         features: features.clone(),
