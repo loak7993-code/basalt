@@ -7,6 +7,13 @@ the git lineage of the fork point.
 
 Project and site work published after the 2.0.0 tag:
 
+- CurseForge 403 fix: `api.curseforge.com` rejects every request that carries
+  no `x-api-key`, and this build ships no key, so mods, shader packs, resource
+  packs and modpacks all failed with `Forbidden: API Key missing or invalid`.
+  `mirroredCurseForgeSource()` now leads with the keyless MCIM mirror when no
+  key is configured and keeps the official source in front when one is.
+  Modrinth was never affected.
+
 - Published at `github.com/loak7993-code/basalt` (public, GPL-3). Build
   output, `node_modules`, the served site bundle, the release keystore and the
   share log are no longer tracked, and the release keystore passwords were
