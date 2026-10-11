@@ -21,9 +21,13 @@ play and offline-mode servers.
 
 | Platform | Build | Where |
 |---|---|---|
-| Android (arm64) | `Basalt-2.0.0-arm64-v8a.apk` | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
-| Android (any ABI) | `Basalt-2.0.0-universal.apk` | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
+| Android (arm64) | `Basalt-2.0.1-arm64-v8a.apk` (174 MB) | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
+| Android (any ABI) | `Basalt-2.0.1.apk` (341 MB) | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
 | Linux x86_64 | `Basalt-2.0.0-x86_64.AppImage` (6.4 MB) | [GitHub releases](https://github.com/loak7993-code/basalt/releases) |
+
+The 2.0.0 APKs were published signed with the debug key. Anyone upgrading from
+2.0.0 needs the `update-from-2.0.0` build in the same release, otherwise Android
+refuses the update. See the [2.0.1 release notes](https://github.com/loak7993-code/basalt/releases/tag/v2.0.1).
 
 Binaries ship as release assets, not as commits.
 
@@ -80,8 +84,8 @@ No build-time configuration is required. Optional properties live in
 | `launcher_app_name` | Full display name | `Basalt` |
 | `launcher_short_name` | Short name used in user agents | `Basalt` |
 | `url_home` | Fork home page (update/about links) | `https://github.com/loak7993-code/basalt` |
-| `launcher_version_code` | Android versionCode | `20000` |
-| `launcher_version_name` | Android versionName | `2.0.0` |
+| `launcher_version_code` | Android versionCode | `20001` |
+| `launcher_version_name` | Android versionName | `2.0.1` |
 | `basalt_store_password` | Release keystore password (unset in git) | from env `STORE_PASSWORD` or `.store_password.txt` |
 | `basalt_key_password` | Release key password (unset in git) | from env `KEY_PASSWORD` or `.key_password.txt` |
 | `oauth_client_id` | Microsoft OAuth client id for MS login | unset (offline login needs none) |

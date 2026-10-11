@@ -20,7 +20,7 @@ const RELEASES = `${REPO}/releases`;
 const APPIMAGE_SHA256 =
   "bc6a05ccb3bf620869c8033b7215da52033c599fdd722e1de9b8d921cfdd01f3";
 const LINUX_RUN =
-  "curl -LO https://github.com/loak7993-code/basalt/releases/download/v2.0.0/Basalt-2.0.0-x86_64.AppImage && chmod +x Basalt-2.0.0-x86_64.AppImage && ./Basalt-2.0.0-x86_64.AppImage";
+  "curl -LO https://github.com/loak7993-code/basalt/releases/download/v2.0.1/Basalt-2.0.0-x86_64.AppImage && chmod +x Basalt-2.0.0-x86_64.AppImage && ./Basalt-2.0.0-x86_64.AppImage";
 
 function Mark({ size = 28 }: { size?: number }) {
   return (
@@ -635,20 +635,26 @@ function App() {
                 </p>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <a
-                    href="/dl/Basalt-2.0.0-universal.apk"
+                    href="/dl/Basalt-2.0.1.apk"
                     className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-black transition-all active:scale-[0.98] hover:brightness-110"
                   >
                     Get the APK
                   </a>
                   <a
-                    href="/dl/Basalt-2.0.0-arm64-v8a.apk"
+                    href="/dl/Basalt-2.0.1-arm64-v8a.apk"
                     className="inline-flex items-center gap-2 rounded-lg border border-white/[0.08] px-5 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:text-white"
                   >
                     arm64 only
                   </a>
                 </div>
                 <p className="mt-4 font-mono text-[10px] text-zinc-600">
-                  400 MB universal · 182 MB arm64 · Android 8.0+
+                  341 MB universal · 174 MB arm64 · Android 8.0+
+                </p>
+                <p className="mt-3 text-[13px] leading-relaxed text-zinc-500">
+                  Already on 2.0.0? That build was signed with a debug key, so
+                  Android will not update it in place. Grab the{" "}
+                  <span className="font-mono text-zinc-400">update-from-2.0.0</span>{" "}
+                  build from the release page instead of reinstalling.
                 </p>
               </div>
             </Reveal>
