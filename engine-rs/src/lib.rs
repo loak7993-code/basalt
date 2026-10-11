@@ -11,6 +11,7 @@
 //! assembles the full JVM and game argument plan. The Android host calls into
 //! this crate over JNI; the desktop test suite runs the same code natively.
 
+pub mod diagnose;
 pub mod download;
 pub mod exec;
 pub mod ffi;
@@ -18,8 +19,11 @@ pub mod manifest;
 pub mod plan;
 pub mod policy;
 pub mod rules;
+pub mod supervisor;
 
+pub use diagnose::{CrashKind, Diagnosis, Fix, LaunchContext, Renderer};
 pub use manifest::Platform;
 pub use plan::{EngineOptions, InstallLayout, LaunchPlan, PlanBuilder};
 pub use policy::{default_ram_allocation, gc_policy_from_args, GcPolicy, MemoryPolicy};
 pub use rules::{Features, RuleContext};
+pub use supervisor::{Attempt, HeapTweaker, LaunchReport, Limits, PlanTweaker, Supervisor};

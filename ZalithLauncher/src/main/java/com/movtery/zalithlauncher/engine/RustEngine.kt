@@ -80,6 +80,22 @@ object RustEngine {
         return args
     }
 
+    /**
+     * Classifies a failed launch. `linesJson` is a JSON array of log lines,
+     * `factsJson` carries what the host knows about the launch. Returns a JSON
+     * object describing the crash and the fix, or {error} when the call fails.
+     */
+    fun diagnoseCrash(linesJson: String, exitCode: Int, factsJson: String): String {
+        if (loaded) return nativeDiagnoseCrash(linesJson, exitCode, factsJson)
+        return "{\"error\":\"engine unavailable\"}"
+    }
+
+    private external fun nativeDiagnoseCrash(
+        linesJson: String,
+        exitCode: Int,
+        factsJson: String,
+    ): String
+
     private external fun nativeDefaultRamAllocation(deviceRamMb: Int, is32Bit: Int): Int
     private external fun nativeApplyGcPolicy(argsJson: String): String
 

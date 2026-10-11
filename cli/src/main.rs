@@ -43,6 +43,9 @@ enum Command {
         /// RAM for the game JVM in MB
         #[arg(long)]
         ram: Option<i64>,
+        /// Diagnose a failed launch and retry it once with a fix applied
+        #[arg(long = "supervise", default_value_t = true, action = clap::ArgAction::Set)]
+        supervise: bool,
     },
     /// Store the offline account used for launches
     Account {
@@ -64,12 +67,14 @@ fn main() {
             server,
             jvm_args,
             ram,
+            supervise,
         } => launch::run(
             version.as_deref(),
             name.as_deref(),
             server.as_deref(),
             &jvm_args,
             ram,
+            supervise,
         ),
         Command::Account { name } => accounts::set(&name),
         Command::Paths => {

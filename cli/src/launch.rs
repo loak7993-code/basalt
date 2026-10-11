@@ -1,9 +1,11 @@
 //! `basalt play`: build the plan with the Rust engine and exec the JVM.
 
 use crate::{accounts, java, paths};
+use basalt_engine::diagnose::LaunchContext;
 use basalt_engine::exec::{ChildProcessExec, ExecStrategy};
 use basalt_engine::manifest::VersionManifest;
 use basalt_engine::plan::{AuthContext, EngineOptions, InstallLayout, MemoryOptions, PlanBuilder};
+use basalt_engine::supervisor::{HeapTweaker, Supervisor};
 use std::fs;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -14,9 +16,10 @@ pub fn run(
     server: Option<&str>,
     jvm_args: &[String],
     ram: Option<i64>,
+    supervise: bool,
 ) -> i32 {
     let sink: Arc<dyn Fn(String) + Send + Sync> = Arc::new(move |line: String| println!("{line}"));
-    match run_flow(version, name, server, jvm_args, ram, sink) {
+    match run_flow(version, name, server, jvm_args, ram, supervise, sink) {
         Ok(code) => code,
         Err(message) => {
             eprintln!("error: {message}");
@@ -33,6 +36,7 @@ pub fn run_flow(
     server: Option<&str>,
     jvm_args: &[String],
     ram: Option<i64>,
+    supervise: bool,
     progress: Arc<dyn Fn(String) + Send + Sync>,
 ) -> Result<i32, String> {
     let id: String = match version {
@@ -116,11 +120,13 @@ pub fn run_flow(
                 .unwrap_or(4),
         ),
         strip_always_pre_touch: true,
-        // Desktop launch: Mojang's default-user-jvm entries apply, values are
-        // substituted by the engine, and the engine owns the classpath.
+        // Desktop launch: Mojang's default-user-jvm entries apply and values are
+        // substituted by the engine. The engine also owns the classpath here,
+        // so ${classpath} has to be resolved or the JVM looks for the main
+        // class on the default classpath and finds nothing.
         ignore_default_user_jvm: false,
         strings_only: false,
-        substitute_classpath: false,
+        substitute_classpath: true,
     };
     let quick_play = server.map(|address| basalt_engine::plan::QuickPlay::Server {
         address: address.to_string(),
@@ -158,12 +164,50 @@ pub fn run_flow(
         plan.jvm_args.len()
     ));
 
-    let exec = ChildProcessExec;
-    Ok(
-        exec.exec(&plan, &runtime.java_bin.to_string_lossy(), &mut |line| {
-            (progress)(line.to_string());
-        }),
-    )
+    let java = runtime.java_bin.to_string_lossy().to_string();
+    // The report is printed after the run, so keep an independent handle.
+    let reporting = Arc::clone(&progress);
+    let emit: Arc<dyn Fn(&str) + Send + Sync> =
+        Arc::new(move |output: &str| (reporting)(output.to_string()));
+
+    if !supervise {
+        return Ok(ChildProcessExec.exec(&plan, &java, &mut |out| emit(out)));
+    }
+
+    // Supervised launch: a failed launch is classified and, when the fix is
+    // safe, applied and retried. Anything left over is printed so the player
+    // sees what changed and what the game said on the way out.
+    let supervisor = Supervisor::new(
+        ChildProcessExec,
+        HeapTweaker,
+        LaunchContext {
+            heap_mb: Some(heap_mb),
+            device_ram_mb: Some(total_ram_mb()),
+            renderer: None,
+            java_major: Some(runtime.major),
+            mods_dir: Some(layout.game_dir.join("mods")),
+        },
+    );
+    let report = supervisor.run(&plan, &java, Arc::clone(&emit));
+
+    if let Some(diagnosis) = report.diagnosis() {
+        (progress)(format!("crash: {}", diagnosis.kind.headline()));
+        if !diagnosis.evidence.is_empty() {
+            (progress)("evidence:".to_string());
+            for entry in &diagnosis.evidence {
+                (progress)(format!("  {entry}"));
+            }
+        }
+        (progress)(diagnosis.fix.describe());
+        if !diagnosis.tail.is_empty() {
+            (progress)("--- last log lines ---".to_string());
+            for entry in &diagnosis.tail {
+                (progress)(format!("  {entry}"));
+            }
+        }
+    }
+
+    Ok(report.exit_code)
 }
 
 fn latest_installed() -> Option<String> {

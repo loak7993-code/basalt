@@ -1,12 +1,29 @@
-[18:03:31] [Datafixer Bootstrap #0/INFO]: 307 Datafixer optimizations took 438 milliseconds
-[18:03:37] [Render thread/INFO]: Environment: Environment[discoveryUrl=https://discovery.minecraftservices.com/minecraft/client, name=PROD]
-[18:03:37] [Render thread/INFO]: Setting user: basalt_linux
-[18:03:37] [Render thread/INFO]: Backend library: LWJGL version 3.4.3+4
-[18:03:37] [Render thread/INFO]: SDL [SYSTEM]: App name: Minecraft
-[18:03:37] [Render thread/INFO]: SDL [SYSTEM]: App version: 26.3
-[18:03:37] [Render thread/INFO]: SDL [SYSTEM]: App ID: com.mojang.minecraft
-[18:03:37] [Render thread/INFO]: SDL [SYSTEM]: SDL revision: SDL-3.4.14--128-NOTFOUND
-[18:03:37] [Download-2/ERROR]: Failed to fetch user properties
+[10:25:38] [Datafixer Bootstrap #0/INFO]: 307 Datafixer optimizations took 1022 milliseconds
+[10:25:45] [Render thread/INFO]: Environment: Environment[discoveryUrl=https://discovery.minecraftservices.com/minecraft/client, name=PROD]
+[10:25:45] [Render thread/INFO]: Setting user: steve
+[10:25:46] [Render thread/INFO]: Backend library: LWJGL version 3.4.3+4
+[10:25:46] [Render thread/WARN]: Detected unexpected shutdown during last game startup: resetting fullscreen mode
+[10:25:46] [Render thread/INFO]: SDL [SYSTEM]: App name: Minecraft
+[10:25:46] [Render thread/INFO]: SDL [SYSTEM]: App version: 26.3
+[10:25:46] [Render thread/INFO]: SDL [SYSTEM]: App ID: com.mojang.minecraft
+[10:25:46] [Render thread/INFO]: SDL [SYSTEM]: SDL revision: SDL-3.4.14--128-NOTFOUND
+[10:25:46] [Render thread/WARN]: Detected unexpected shutdown during last game startup: forcing preferred graphics API to OpenGL
+[10:25:46] [Render thread/ERROR]: Failed to create backend OpenGL
+com.mojang.renderpearl.api.device.BackendCreationException: glGetError mismatch
+	at com.mojang.renderpearl.backend.opengl.GlBackend.loadLibrary(GlBackend.java:40)
+	at net.minecraft.client.Minecraft.<init>(Minecraft.java:530)
+	at net.minecraft.client.main.Main.main(Main.java:278)
+[10:25:46] [Render thread/INFO]: Enabling optional FeatureSet [Calibrated Timestamps]
+[10:25:46] [Render thread/INFO]: Enabling optional FeatureSet [EXT MultiDraw]
+[10:25:46] [Render thread/INFO]: Enabling optional FeatureSet [Wireframe]
+[10:25:46] [Render thread/INFO]: Optional FeatureSet [AMD Buffer Marker] not supported
+[10:25:46] [Render thread/INFO]: Optional FeatureSet [NV Diagnostic Checkpoint] not supported
+[10:25:46] [Render thread/INFO]: Using graphics backend Vulkan, using drivers: 1.4.318 llvmpipe Mesa 25.2.8-0ubuntu0.24.04.4 (LLVM 20.1.2)
+[10:25:46] [Render thread/INFO]: Using graphics device: llvmpipe (LLVM 20.1.2, 256 bits) (0x10005)
+[10:25:46] [Render thread/INFO]: Using graphics device extensions: VK_EXT_calibrated_timestamps (D), VK_KHR_synchronization2 (D), VK_EXT_multi_draw (D), VK_EXT_vertex_attribute_divisor (D), VK_KHR_swapchain (D), VK_KHR_surface (I), VK_KHR_display (I), VK_KHR_push_descriptor (D), VK_EXT_debug_utils (I), VK_KHR_dynamic_rendering (D)
+[10:25:46] [Render thread/INFO]: Created window using SDL video driver: kmsdrm
+[10:25:46] [Render thread/WARN]: Failed to set window icon: That operation is not supported
+[10:25:46] [Download-2/ERROR]: Failed to fetch user properties
 com.mojang.authlib.exceptions.InvalidCredentialsException: Status: 401
 	at com.mojang.authlib.exceptions.MinecraftClientHttpException.toAuthenticationException(MinecraftClientHttpException.java:70)
 	at com.mojang.authlib.services.MinecraftServicesUserApiService.fetchProperties(MinecraftServicesUserApiService.java:168)
@@ -22,18 +39,3 @@ Caused by: MinecraftClientHttpException[type=HTTP_ERROR, status=401, response=Er
 	at com.mojang.authlib.minecraft.client.MinecraftClient.get(MinecraftClient.java:65)
 	at com.mojang.authlib.services.MinecraftServicesUserApiService.fetchProperties(MinecraftServicesUserApiService.java:118)
 	... 5 more
-[18:03:37] [Render thread/ERROR]: Failed to create backend OpenGL
-com.mojang.renderpearl.api.device.BackendCreationException: glGetError mismatch
-	at com.mojang.renderpearl.backend.opengl.GlBackend.loadLibrary(GlBackend.java:40)
-	at net.minecraft.client.Minecraft.<init>(Minecraft.java:530)
-	at net.minecraft.client.main.Main.main(Main.java:278)
-[18:03:37] [Render thread/INFO]: Enabling optional FeatureSet [Calibrated Timestamps]
-[18:03:37] [Render thread/INFO]: Enabling optional FeatureSet [EXT MultiDraw]
-[18:03:37] [Render thread/INFO]: Enabling optional FeatureSet [Wireframe]
-[18:03:37] [Render thread/INFO]: Optional FeatureSet [AMD Buffer Marker] not supported
-[18:03:37] [Render thread/INFO]: Optional FeatureSet [NV Diagnostic Checkpoint] not supported
-[18:03:38] [Render thread/INFO]: Using graphics backend Vulkan, using drivers: 1.4.318 llvmpipe Mesa 25.2.8-0ubuntu0.24.04.3 (LLVM 20.1.2)
-[18:03:38] [Render thread/INFO]: Using graphics device: llvmpipe (LLVM 20.1.2, 256 bits) (0x10005)
-[18:03:38] [Render thread/INFO]: Using graphics device extensions: VK_EXT_calibrated_timestamps (D), VK_KHR_synchronization2 (D), VK_EXT_multi_draw (D), VK_EXT_vertex_attribute_divisor (D), VK_KHR_swapchain (D), VK_KHR_surface (I), VK_KHR_display (I), VK_KHR_push_descriptor (D), VK_EXT_debug_utils (I), VK_KHR_dynamic_rendering (D)
-[18:03:38] [Render thread/INFO]: Created window using SDL video driver: kmsdrm
-[18:03:38] [Render thread/WARN]: Failed to set window icon: That operation is not supported

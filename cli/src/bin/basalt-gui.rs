@@ -170,9 +170,10 @@ impl App {
             let sink = Arc::new(move |line: String| {
                 let _ = sink_tx.send(InstallEvent::Log(line));
             });
-            let result = basalt_cli::launch::run_flow(Some(&version), None, None, &[], None, sink)
-                .map(|code| format!("game exited with code {code}"))
-                .map_err(|message| vec![message]);
+            let result =
+                basalt_cli::launch::run_flow(Some(&version), None, None, &[], None, true, sink)
+                    .map(|code| format!("game exited with code {code}"))
+                    .map_err(|message| vec![message]);
             let _ = done_tx.send(InstallEvent::Done(result));
         });
         self.install_log.clear();

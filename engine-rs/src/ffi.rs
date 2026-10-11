@@ -189,3 +189,87 @@ pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeD
     })();
     out(&env, value)
 }
+
+/// Classifies a failed launch from its log lines. `facts_json` carries the
+/// host's knowledge of the launch:
+/// `{"heapMb":1637,"deviceRamMb":4096,"renderer":"gl4es","javaMajor":25,"modsDir":"/..."}`
+/// Lines may be a JSON array of strings or one newline-separated string.
+/// Returns JSON: {kind, headline, fix, evidence:[...]}.
+#[no_mangle]
+pub extern "system" fn Java_com_movtery_zalithlauncher_engine_RustEngine_nativeDiagnoseCrash<
+    'local,
+>(
+    mut env: JNIEnv<'local>,
+    _class: JClass<'local>,
+    lines_json: JString<'local>,
+    exit_code: jint,
+    facts_json: JString<'local>,
+) -> JString<'local> {
+    let value = (|| -> Result<String, String> {
+        let raw = to_string(&mut env, &lines_json)?;
+        let facts_raw = to_string(&mut env, &facts_json)?;
+        let lines: Vec<String> = match serde_json::from_str::<Vec<String>>(&raw) {
+            Ok(list) => list,
+            Err(_) => raw.lines().map(str::to_string).collect(),
+        };
+        let facts: DiagnoseFacts = serde_json::from_str(&facts_raw).unwrap_or_default();
+        let diagnosis = crate::diagnose::diagnose(&lines, exit_code, &facts.context());
+        let fix = match &diagnosis.fix {
+            crate::diagnose::Fix::SetHeap { heap_mb, reason } => serde_json::json!({
+                "type": "setHeap", "heapMb": heap_mb, "reason": reason
+            }),
+            crate::diagnose::Fix::SetRenderer { renderer } => serde_json::json!({
+                "type": "setRenderer", "renderer": renderer.as_str()
+            }),
+            crate::diagnose::Fix::UseJava { major } => serde_json::json!({
+                "type": "useJava", "major": major
+            }),
+            crate::diagnose::Fix::RefetchFiles { paths } => serde_json::json!({
+                "type": "refetch", "paths": paths
+            }),
+            crate::diagnose::Fix::DisableMods { files } => serde_json::json!({
+                "type": "disableMods", "files": files.iter().map(|p| p.to_string_lossy().into_owned()).collect::<Vec<String>>()
+            }),
+            crate::diagnose::Fix::None { reason } => serde_json::json!({
+                "type": "none", "reason": reason
+            }),
+        };
+        Ok(serde_json::json!({
+            "kind": diagnosis.kind.as_str(),
+            "headline": diagnosis.kind.headline(),
+            "exitCode": diagnosis.exit_code,
+            "fix": fix,
+            "fixDescription": diagnosis.fix.describe(),
+            "evidence": diagnosis.evidence,
+            "tail": diagnosis.tail,
+        })
+        .to_string())
+    })();
+    out(&env, value)
+}
+
+/// Host-supplied facts about the launch that failed.
+#[derive(Default, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct DiagnoseFacts {
+    heap_mb: Option<i64>,
+    device_ram_mb: Option<f64>,
+    renderer: Option<String>,
+    java_major: Option<i64>,
+    mods_dir: Option<String>,
+}
+
+impl DiagnoseFacts {
+    fn context(&self) -> crate::diagnose::LaunchContext {
+        crate::diagnose::LaunchContext {
+            heap_mb: self.heap_mb,
+            device_ram_mb: self.device_ram_mb,
+            renderer: self
+                .renderer
+                .as_deref()
+                .and_then(crate::diagnose::Renderer::parse),
+            java_major: self.java_major,
+            mods_dir: self.mods_dir.as_ref().map(std::path::PathBuf::from),
+        }
+    }
+}

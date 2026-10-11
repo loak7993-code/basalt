@@ -19,19 +19,40 @@ impl ExecStrategy for ChildProcessExec {
         let command = plan.to_command_list(java_binary);
         let mut process = std::process::Command::new(&command[0])
             .args(&command[1..])
-            // Merged stream: no interleaved-pipe deadlock, single drain order.
             .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::null())
+            // The JVM reports OutOfMemoryError, UnsupportedClassVersionError and
+            // bad-flag failures on stderr. Dropping it would hide exactly the
+            // lines crash diagnosis runs on, so both streams are drained.
+            .stderr(std::process::Stdio::piped())
             .spawn()
             .expect("failed to spawn the java process");
         let stdout = process.stdout.take().expect("stdout was piped");
-        use std::io::BufRead;
-        for line in std::io::BufReader::new(stdout)
-            .lines()
-            .map_while(Result::ok)
-        {
-            sink(&line);
-        }
+        let stderr = process.stderr.take().expect("stderr was piped");
+
+        // One reader per pipe feeding one channel, so neither pipe can fill up
+        // and deadlock the other. Ordering between the two streams is best
+        // effort; every line still reaches the sink.
+        let (tx, rx) = std::sync::mpsc::channel::<String>();
+        std::thread::scope(|scope| {
+            let pump = |pipe: Box<dyn std::io::Read + Send>,
+                        tx: std::sync::mpsc::Sender<String>| {
+                scope.spawn(move || {
+                    use std::io::BufRead;
+                    for line in std::io::BufReader::new(pipe).lines().map_while(Result::ok) {
+                        if tx.send(line).is_err() {
+                            break;
+                        }
+                    }
+                });
+            };
+            pump(Box::new(stdout), tx.clone());
+            pump(Box::new(stderr), tx.clone());
+            drop(tx);
+            for line in rx {
+                sink(&line);
+            }
+        });
+
         match process.wait() {
             Ok(status) => status.code().unwrap_or(-1),
             Err(_) => -1,

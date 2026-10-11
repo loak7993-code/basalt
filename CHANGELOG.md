@@ -7,6 +7,30 @@ the git lineage of the fork point.
 
 Project and site work published after the 2.0.0 tag:
 
+- Crash-loop autopilot. A failed launch is classified from its own log and, when
+  the fix is safe, applied and retried once: the player is told what changed.
+  New engine modules `diagnose` (classification, pure over log lines) and
+  `supervisor` (the bounded retry loop). Covered: heap exhaustion, renderer
+  init failure, unresolved mod sets, mixin failures, unsupported Java,
+  corrupt downloads, and JVM argument errors, which are never retried.
+  Safety rules: the same fix is never applied twice, the loop stops at three
+  launches, a heap fix stays inside 75% of device RAM and under the ceiling,
+  a mod is only disabled by a reversible rename and only when the log names a
+  file that exists, and anything the host cannot do is reported instead of
+  guessed.
+- `ChildProcessExec` now drains stderr as well as stdout. The JVM prints
+  `OutOfMemoryError`, `UnsupportedClassVersionError` and bad-flag errors on
+  stderr, so crash diagnosis was blind to exactly the lines it needs. Two
+  reader threads feed one channel, so neither pipe can deadlock the other.
+- CLI `basalt play` supervises by default; `--supervise false` turns it off.
+  The GUI passes the same flag through.
+- Fixed a regression from the 2.0.1 launch-plan fix: the CLI passed
+  `substituteClasspath: false`, leaving `${classpath}` unsubstituted, so
+  `basalt play` died with `ClassNotFoundException: net.minecraft.client.main.Main`.
+- Android: `CrashTriage` classifies a launch through the same Rust rules over
+  JNI, returning a typed fix (heap, renderer, Java major, refetch, disable
+  mods) the launch-failure UI can act on.
+
 - CurseForge 403 fix: `api.curseforge.com` rejects every request that carries
   no `x-api-key`, and this build ships no key, so mods, shader packs, resource
   packs and modpacks all failed with `Forbidden: API Key missing or invalid`.
